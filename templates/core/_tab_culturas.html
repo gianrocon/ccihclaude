@@ -1,0 +1,48 @@
+{% if culturas_com_atb %}
+{% for item in culturas_com_atb %}
+{% with c=item.cultura %}
+<div class="card card-cultura mb-3 mt-2">
+  <div class="card-header d-flex justify-content-between align-items-center py-2">
+    <span class="fw-semibold">{{ c.procedimento }}</span>
+    <span class="text-muted small">{{ c.dt_coleta|date:"d/m/Y"|default:"—" }}</span>
+  </div>
+  <div class="card-body py-2">
+    {% if c.microrganismo %}
+    <p class="mb-1"><strong>Microrganismo:</strong> {{ c.microrganismo }}</p>
+    {% endif %}
+    <p class="mb-1 small text-muted">
+      Unidade: {{ c.unidade|default:"—" }} &nbsp;|&nbsp;
+      Resultado: {{ c.dt_assinatura|date:"d/m/Y"|default:"—" }}
+    </p>
+
+    {% if item.antibiograma %}
+    <div class="table-responsive mt-2">
+      <table class="table table-sm table-bordered mb-1" style="max-width:480px;">
+        <thead class="table-light">
+          <tr><th>Antibiótico</th><th>Sensibilidade</th></tr>
+        </thead>
+        <tbody>
+          {% for a in item.antibiograma %}
+          <tr>
+            <td>{{ a.antibiotico }}</td>
+            <td class="sens-{{ a.sensibilidade }}">{{ a.get_sensibilidade_display }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    {% if c.obs %}
+    <p class="small text-muted mb-0"><em>Obs: {{ c.obs }}</em></p>
+    {% endif %}
+    {% if c.trat_respir %}
+    <p class="small text-muted mb-0"><em>Trat. Resp.: {{ c.trat_respir }}</em></p>
+    {% endif %}
+  </div>
+</div>
+{% endwith %}
+{% endfor %}
+{% else %}
+<p class="text-muted mt-3">Sem culturas registradas para este paciente.</p>
+{% endif %}

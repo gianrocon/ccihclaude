@@ -1,0 +1,33 @@
+{% if periodos_atb %}
+<div class="table-responsive mt-2">
+  <table class="table table-sm table-hover align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>Medicamento</th>
+        <th>Início</th>
+        <th>Fim</th>
+        <th>Dias</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in periodos_atb %}
+      <tr {% if p.is_resistant %}class="atb-resistant"{% endif %}>
+        <td>{% if p.is_resistant %}⚠ {% endif %}{{ p.medicamento }}</td>
+        <td>{{ p.inicio|date:"d/m/Y" }}</td>
+        <td>{{ p.fim|date:"d/m/Y" }}</td>
+        <td>{{ p.total_dias }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if gantt_atb_b64 %}
+<div class="mt-3">
+  <img src="data:image/png;base64,{{ gantt_atb_b64 }}" class="img-fluid w-100" alt="Linha do tempo ATB">
+</div>
+{% endif %}
+
+{% else %}
+<p class="text-muted mt-3">Sem registros de antibióticos para este paciente.</p>
+{% endif %}

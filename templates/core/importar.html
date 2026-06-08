@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Carregar Arquivo — CCIH{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <h5 class="mb-3 text-primary fw-bold">Carregar Arquivo</h5>
+
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Arquivo Excel</label>
+            <input type="file" name="arquivo" class="form-control" accept=".xlsx,.xls" required>
+            <div class="form-text">
+              Formatos aceitos: <code>.xlsx</code> (Microbiologia, Passagens) e <code>.xls</code> (Controle ATB).<br>
+              O tipo de arquivo é detectado automaticamente pelo conteúdo.
+            </div>
+          </div>
+          <button type="submit" class="btn btn-success">Importar</button>
+          <a href="{% url 'busca' %}" class="btn btn-secondary ms-2">Cancelar</a>
+        </form>
+      </div>
+    </div>
+
+    <div class="card border-info">
+      <div class="card-header bg-info bg-opacity-10 text-info fw-semibold">Tipos de arquivo suportados</div>
+      <div class="card-body small">
+        <dl class="mb-0">
+          <dt>Microbiologia (.xlsx)</dt>
+          <dd>Culturas microbiológicas com antibiograma. Detectado pela palavra "microbiologia" no cabeçalho.</dd>
+          <dt>Controle ATB (.xls)</dt>
+          <dd>Controle de antibióticos por paciente. Detectado pela palavra "antimicrobiano" no cabeçalho.</dd>
+          <dt>Passagens / Internamentos (.xlsx)</dt>
+          <dd>Períodos de internação. Detectado pelas palavras "permanência" ou "internamento" no cabeçalho.</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

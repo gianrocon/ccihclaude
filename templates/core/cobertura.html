@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Cobertura de Dados — CCIH{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <h5 class="mb-3 text-primary fw-bold">Cobertura de Dados — {{ request.user.hospital }}</h5>
+
+    {% if not request.user.hospital %}
+    <div class="alert alert-warning">Seu usuário não está atribuído a nenhum hospital.</div>
+    {% else %}
+
+    <div class="row g-3">
+
+      <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-header bg-success text-white fw-semibold">🔬 Microbiologia</div>
+          <div class="card-body small">
+            {% if culturas %}
+              {% for inicio, fim in culturas %}
+              <div class="badge bg-success-subtle text-success border border-success mb-1 w-100 text-start px-2 py-1">
+                {{ inicio|date:"d/m/Y" }} → {{ fim|date:"d/m/Y" }}
+              </div>
+              {% endfor %}
+            {% else %}
+              <span class="text-muted">Sem dados.</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-header bg-primary text-white fw-semibold">💊 Antibióticos</div>
+          <div class="card-body small">
+            {% if atb %}
+              {% for inicio, fim in atb %}
+              <div class="badge bg-primary-subtle text-primary border border-primary mb-1 w-100 text-start px-2 py-1">
+                {{ inicio|date:"d/m/Y" }} → {{ fim|date:"d/m/Y" }}
+              </div>
+              {% endfor %}
+            {% else %}
+              <span class="text-muted">Sem dados.</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-header bg-info text-white fw-semibold">🏥 Internamentos</div>
+          <div class="card-body small">
+            {% if internamentos %}
+              {% for inicio, fim in internamentos %}
+              <div class="badge bg-info-subtle text-info border border-info mb-1 w-100 text-start px-2 py-1">
+                {{ inicio|date:"d/m/Y" }} → {{ fim|date:"d/m/Y" }}
+              </div>
+              {% endfor %}
+            {% else %}
+              <span class="text-muted">Sem dados.</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

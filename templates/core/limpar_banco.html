@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Limpar Banco — CCIH{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="card border-danger shadow-sm">
+      <div class="card-header bg-danger text-white fw-bold">⚠ Limpar Banco de Dados</div>
+      <div class="card-body">
+        <p>Esta ação irá remover <strong>permanentemente</strong> todos os dados do hospital
+          <strong>{{ request.user.hospital }}</strong>:</p>
+        <ul>
+          <li>Todos os pacientes</li>
+          <li>Todas as culturas e antibiogramas</li>
+          <li>Todos os registros de controle ATB</li>
+          <li>Todos os internamentos</li>
+        </ul>
+        <p class="text-danger fw-semibold">Esta operação não pode ser desfeita.</p>
+
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="confirmar" value="1">
+          <button type="submit" class="btn btn-danger me-2">Confirmar — Limpar Tudo</button>
+          <a href="{% url 'busca' %}" class="btn btn-secondary">Cancelar</a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
