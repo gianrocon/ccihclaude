@@ -79,8 +79,8 @@ class Cultura(models.Model):
     unidade = models.CharField(max_length=100, blank=True, verbose_name="Unidade")
     dt_coleta = models.DateField(null=True, blank=True, verbose_name="Data de Coleta")
     dt_assinatura = models.DateField(null=True, blank=True, verbose_name="Data de Assinatura")
-    procedimento = models.CharField(max_length=200, blank=True, verbose_name="Procedimento")
-    microrganismo = models.CharField(max_length=200, blank=True, verbose_name="Microrganismo")
+    procedimento = models.CharField(max_length=500, blank=True, verbose_name="Procedimento")
+    microrganismo = models.CharField(max_length=500, blank=True, verbose_name="Microrganismo")
     obs = models.TextField(blank=True, verbose_name="Observações")
     trat_respir = models.TextField(blank=True, verbose_name="Tratamento Respiratório")
 
@@ -131,7 +131,7 @@ class ControleAtbRaw(models.Model):
         verbose_name="Paciente",
     )
     acomodacao = models.CharField(max_length=100, blank=True, verbose_name="Acomodação")
-    medicamento = models.CharField(max_length=200, verbose_name="Medicamento")
+    medicamento = models.CharField(max_length=500, verbose_name="Medicamento")
     dt_inicio = models.DateField(null=True, blank=True, verbose_name="Data de Início")
     dias_solic = models.IntegerField(default=0, verbose_name="Dias Solicitados")
     dias_ccih = models.IntegerField(default=0, verbose_name="Dias CCIH")
