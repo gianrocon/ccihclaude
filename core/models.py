@@ -79,8 +79,8 @@ class Cultura(models.Model):
     unidade = models.CharField(max_length=100, blank=True, verbose_name="Unidade")
     dt_coleta = models.DateField(null=True, blank=True, verbose_name="Data de Coleta")
     dt_assinatura = models.DateField(null=True, blank=True, verbose_name="Data de Assinatura")
-    procedimento = models.CharField(max_length=500, blank=True, verbose_name="Procedimento")
-    microrganismo = models.CharField(max_length=500, blank=True, verbose_name="Microrganismo")
+    procedimento = models.TextField(blank=True, verbose_name="Procedimento")
+    microrganismo = models.TextField(blank=True, verbose_name="Microrganismo")
     obs = models.TextField(blank=True, verbose_name="Observações")
     trat_respir = models.TextField(blank=True, verbose_name="Tratamento Respiratório")
 
