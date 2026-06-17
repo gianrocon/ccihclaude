@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import Hospital, CustomUser, Importacao, Paciente, Cultura, Antibiograma, ControleAtbRaw, Internamento
+from .models import Hospital, CustomUser, Vinculo, Importacao, Paciente, Cultura, Antibiograma, ControleAtbRaw, Internamento
 
 
 @admin.register(Hospital)
@@ -11,16 +11,24 @@ class HospitalAdmin(admin.ModelAdmin):
     search_fields = ["nome", "sigla"]
 
 
+class VinculoInline(admin.TabularInline):
+    model = Vinculo
+    extra = 1
+    autocomplete_fields = ["hospital"]
+
+
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
-    list_display = ["username", "hospital", "papel", "is_active", "is_staff"]
-    list_filter = ["papel", "hospital", "is_active", "is_staff"]
-    fieldsets = UserAdmin.fieldsets + (
-        ("CCIH", {"fields": ("hospital", "papel")}),
-    )
-    add_fieldsets = UserAdmin.add_fieldsets + (
-        ("CCIH", {"fields": ("hospital", "papel")}),
-    )
+    inlines = [VinculoInline]
+    list_display = ["username", "hospitais_list", "is_active", "is_staff"]
+    list_filter = ["vinculos__papel", "vinculos__hospital", "is_active", "is_staff"]
+
+    @admin.display(description="Hospitais")
+    def hospitais_list(self, obj):
+        return ", ".join(
+            f"{v.hospital.sigla} ({v.get_papel_display()})"
+            for v in obj.vinculos.all()
+        ) or "—"
 
 
 @admin.register(Importacao)

@@ -27,8 +27,21 @@
 <nav class="navbar navbar-expand-lg mb-3">
   <div class="container-fluid">
     <a class="navbar-brand" href="{% url 'busca' %}">CCIH</a>
-    {% if user.hospital %}
-    <span class="hospital-badge me-3">{{ user.hospital.sigla }}</span>
+    {% if request.hospitais_disponiveis|length > 1 %}
+    <form method="post" action="{% url 'selecionar_hospital' %}" class="me-3">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <select name="hospital" class="form-select form-select-sm" onchange="this.form.submit()"
+              title="Hospital ativo">
+        {% for h in request.hospitais_disponiveis %}
+        <option value="{{ h.pk }}" {% if request.hospital_atual and request.hospital_atual.pk == h.pk %}selected{% endif %}>
+          {{ h.sigla }}
+        </option>
+        {% endfor %}
+      </select>
+    </form>
+    {% elif request.hospital_atual %}
+    <span class="hospital-badge me-3">{{ request.hospital_atual.sigla }}</span>
     {% endif %}
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
       <span class="navbar-toggler-icon"></span>
@@ -37,7 +50,7 @@
       <ul class="navbar-nav me-auto">
         <li class="nav-item"><a class="nav-link" href="{% url 'busca' %}">Buscar Paciente</a></li>
         <li class="nav-item"><a class="nav-link" href="{% url 'cobertura' %}">Cobertura de Dados</a></li>
-        {% if user.is_carregador %}
+        {% if request.papel_atual == "carregador" %}
         <li class="nav-item"><a class="nav-link" href="{% url 'importar' %}">Carregar Arquivo</a></li>
         <li class="nav-item"><a class="nav-link text-warning" href="{% url 'limpar_banco' %}">Limpar Banco</a></li>
         {% endif %}

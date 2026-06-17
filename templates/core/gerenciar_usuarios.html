@@ -14,8 +14,7 @@
         <tr>
           <th>Usuário</th>
           <th>Nome</th>
-          <th>Hospital</th>
-          <th>Papel</th>
+          <th>Hospitais / Papel</th>
           <th>Ativo</th>
           <th></th>
         </tr>
@@ -25,13 +24,14 @@
         <tr>
           <td class="fw-semibold">{{ u.username }}</td>
           <td>{{ u.get_full_name|default:"—" }}</td>
-          <td>{{ u.hospital.sigla|default:"—" }}</td>
           <td>
-            {% if u.papel == "carregador" %}
-            <span class="badge bg-success">Carregador</span>
-            {% else %}
-            <span class="badge bg-secondary">Consultor</span>
-            {% endif %}
+            {% for v in u.vinculos.all %}
+            <span class="badge {% if v.papel == 'carregador' %}bg-success{% else %}bg-secondary{% endif %} me-1">
+              {{ v.hospital.sigla }}: {{ v.get_papel_display }}
+            </span>
+            {% empty %}
+            <span class="text-muted">— sem acesso —</span>
+            {% endfor %}
           </td>
           <td>
             {% if u.is_active %}
@@ -45,7 +45,7 @@
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="6" class="text-muted text-center">Nenhum usuário encontrado.</td></tr>
+        <tr><td colspan="5" class="text-muted text-center">Nenhum usuário encontrado.</td></tr>
         {% endfor %}
       </tbody>
     </table>

@@ -18,6 +18,40 @@ class Hospital(models.Model):
 
 
 class CustomUser(AbstractUser):
+    hospitais = models.ManyToManyField(
+        Hospital,
+        through="Vinculo",
+        related_name="usuarios",
+        blank=True,
+        verbose_name="Hospitais",
+    )
+
+    class Meta:
+        verbose_name = "Usuário"
+        verbose_name_plural = "Usuários"
+
+    def hospitais_disponiveis(self):
+        """Hospitais ativos aos quais o usuário está vinculado."""
+        return (
+            Hospital.objects.filter(ativo=True, vinculos__usuario=self)
+            .order_by("sigla")
+            .distinct()
+        )
+
+    def papel_em(self, hospital):
+        """Papel do usuário no hospital informado, ou None se não vinculado."""
+        if hospital is None:
+            return None
+        vinculo = self.vinculos.filter(hospital=hospital).first()
+        return vinculo.papel if vinculo else None
+
+    def is_carregador_em(self, hospital):
+        return self.papel_em(hospital) == Vinculo.ROLE_CARREGADOR
+
+
+class Vinculo(models.Model):
+    """Vínculo usuário–hospital com um papel por hospital."""
+
     ROLE_CONSULTOR = "consultor"
     ROLE_CARREGADOR = "carregador"
     ROLES = [
@@ -25,12 +59,16 @@ class CustomUser(AbstractUser):
         (ROLE_CARREGADOR, "Carregador"),
     ]
 
+    usuario = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name="vinculos",
+        verbose_name="Usuário",
+    )
     hospital = models.ForeignKey(
         Hospital,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="usuarios",
+        on_delete=models.CASCADE,
+        related_name="vinculos",
         verbose_name="Hospital",
     )
     papel = models.CharField(
@@ -41,11 +79,13 @@ class CustomUser(AbstractUser):
     )
 
     class Meta:
-        verbose_name = "Usuário"
-        verbose_name_plural = "Usuários"
+        verbose_name = "Vínculo"
+        verbose_name_plural = "Vínculos"
+        unique_together = [("usuario", "hospital")]
+        ordering = ["usuario__username", "hospital__sigla"]
 
-    def is_carregador(self):
-        return self.papel == self.ROLE_CARREGADOR
+    def __str__(self):
+        return f"{self.usuario} @ {self.hospital.sigla} ({self.get_papel_display()})"
 
 
 class Paciente(models.Model):

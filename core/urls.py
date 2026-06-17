@@ -4,6 +4,7 @@ from core.views.patient_views import busca, paciente_detalhe
 from core.views.import_views import importar, limpar_banco
 from core.views.report_views import cobertura
 from core.views.admin_views import gerenciar_usuarios, editar_usuario
+from core.views.hospital_views import selecionar_hospital
 
 urlpatterns = [
     path("", busca, name="busca"),
@@ -11,6 +12,7 @@ urlpatterns = [
     path("importar/", importar, name="importar"),
     path("limpar/", limpar_banco, name="limpar_banco"),
     path("cobertura/", cobertura, name="cobertura"),
+    path("selecionar-hospital/", selecionar_hospital, name="selecionar_hospital"),
     path("gerenciar-usuarios/", gerenciar_usuarios, name="gerenciar_usuarios"),
     path("gerenciar-usuarios/<int:pk>/editar/", editar_usuario, name="editar_usuario"),
 ]

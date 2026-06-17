@@ -1,13 +1,19 @@
 from django.contrib import messages
+from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404, redirect, render
 
-from core.models import CustomUser, Hospital
+from core.models import CustomUser, Hospital, Vinculo
 from core.views import staff_required
 
 
 @staff_required
 def gerenciar_usuarios(request):
-    usuarios = CustomUser.objects.select_related("hospital").order_by("username")
+    usuarios = (
+        CustomUser.objects.prefetch_related(
+            Prefetch("vinculos", queryset=Vinculo.objects.select_related("hospital"))
+        )
+        .order_by("username")
+    )
     hospitais = Hospital.objects.filter(ativo=True).order_by("sigla")
     return render(request, "core/gerenciar_usuarios.html", {
         "usuarios": usuarios,
@@ -21,27 +27,33 @@ def editar_usuario(request, pk):
     hospitais = Hospital.objects.filter(ativo=True).order_by("sigla")
 
     if request.method == "POST":
-        hospital_id = request.POST.get("hospital") or None
-        papel = request.POST.get("papel")
-        ativo = request.POST.get("ativo") == "1"
+        usuario.is_active = request.POST.get("ativo") == "1"
+        usuario.save(update_fields=["is_active"])
 
-        if hospital_id:
-            try:
-                usuario.hospital = Hospital.objects.get(pk=hospital_id)
-            except Hospital.DoesNotExist:
-                usuario.hospital = None
-        else:
-            usuario.hospital = None
+        papeis_validos = {Vinculo.ROLE_CONSULTOR, Vinculo.ROLE_CARREGADOR}
+        for h in hospitais:
+            papel = request.POST.get(f"papel_{h.pk}", "")
+            if papel in papeis_validos:
+                Vinculo.objects.update_or_create(
+                    usuario=usuario,
+                    hospital=h,
+                    defaults={"papel": papel},
+                )
+            else:
+                # "Sem acesso" — remove o vínculo, se existir
+                Vinculo.objects.filter(usuario=usuario, hospital=h).delete()
 
-        if papel in (CustomUser.ROLE_CONSULTOR, CustomUser.ROLE_CARREGADOR):
-            usuario.papel = papel
-
-        usuario.is_active = ativo
-        usuario.save()
         messages.success(request, f"Usuário {usuario.username} atualizado.")
         return redirect("gerenciar_usuarios")
 
+    papel_por_hospital = {
+        v.hospital_id: v.papel for v in usuario.vinculos.all()
+    }
+    linhas = [
+        {"hospital": h, "papel": papel_por_hospital.get(h.pk, "")}
+        for h in hospitais
+    ]
     return render(request, "core/editar_usuario.html", {
         "usuario": usuario,
-        "hospitais": hospitais,
+        "linhas": linhas,
     })

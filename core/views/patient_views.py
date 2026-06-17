@@ -11,7 +11,7 @@ def busca(request):
     termo = request.GET.get("q", "").strip()
     pacientes = []
     if termo:
-        pacientes = patient_service.buscar_pacientes(termo, request.user.hospital)
+        pacientes = patient_service.buscar_pacientes(termo, request.hospital_atual)
         if pacientes.count() == 1:
             from django.shortcuts import redirect
             return redirect("paciente_detalhe", pk=pacientes.first().pk)
@@ -25,7 +25,7 @@ def busca(request):
 @login_required
 def paciente_detalhe(request, pk):
     paciente = get_object_or_404(Paciente, pk=pk)
-    if paciente.hospital != request.user.hospital:
+    if paciente.hospital != request.hospital_atual:
         raise Http404
 
     culturas      = patient_service.get_culturas(paciente)

@@ -31,7 +31,7 @@ def importar(request):
                 f.write(chunk)
 
         try:
-            tipo, n = importer_service.importar_arquivo(tmp_path, request.user.hospital, request.user)
+            tipo, n = importer_service.importar_arquivo(tmp_path, request.hospital_atual, request.user)
             TIPO_LABELS = {
                 "microbiologia": "Microbiologia",
                 "controle_atb": "Controle ATB",
@@ -55,7 +55,7 @@ def importar(request):
 def limpar_banco(request):
     if request.method == "POST" and request.POST.get("confirmar") == "1":
         from core.services import patient_service
-        patient_service.limpar_banco(request.user.hospital)
+        patient_service.limpar_banco(request.hospital_atual)
         messages.success(request, "Banco de dados do hospital limpo com sucesso.")
         return redirect("busca")
 

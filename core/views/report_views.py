@@ -6,7 +6,7 @@ from core.services import patient_service
 
 @login_required
 def cobertura(request):
-    hospital = request.user.hospital
+    hospital = request.hospital_atual
     ctx = {}
     if hospital:
         ctx["culturas"]     = patient_service.get_cobertura_culturas(hospital)

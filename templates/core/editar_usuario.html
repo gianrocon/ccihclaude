@@ -15,27 +15,32 @@
           {% csrf_token %}
 
           <div class="mb-3">
-            <label class="form-label fw-semibold">Hospital</label>
-            <select name="hospital" class="form-select">
-              <option value="">— Sem hospital —</option>
-              {% for h in hospitais %}
-              <option value="{{ h.pk }}" {% if usuario.hospital_id == h.pk %}selected{% endif %}>
-                {{ h.sigla }} — {{ h.nome }}
-              </option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Papel</label>
-            <select name="papel" class="form-select">
-              <option value="consultor" {% if usuario.papel == "consultor" %}selected{% endif %}>Consultor</option>
-              <option value="carregador" {% if usuario.papel == "carregador" %}selected{% endif %}>Carregador</option>
-            </select>
-            <div class="form-text">
+            <label class="form-label fw-semibold">Acesso por hospital</label>
+            <div class="form-text mb-2">
               <strong>Consultor:</strong> apenas consulta dados.<br>
               <strong>Carregador:</strong> consulta, importa arquivos e pode limpar o banco.
             </div>
+            <table class="table table-sm align-middle">
+              <thead class="table-light">
+                <tr><th>Hospital</th><th style="width: 45%">Papel</th></tr>
+              </thead>
+              <tbody>
+                {% for linha in linhas %}
+                <tr>
+                  <td>{{ linha.hospital.sigla }} — {{ linha.hospital.nome }}</td>
+                  <td>
+                    <select name="papel_{{ linha.hospital.pk }}" class="form-select form-select-sm">
+                      <option value="" {% if not linha.papel %}selected{% endif %}>— Sem acesso —</option>
+                      <option value="consultor" {% if linha.papel == "consultor" %}selected{% endif %}>Consultor</option>
+                      <option value="carregador" {% if linha.papel == "carregador" %}selected{% endif %}>Carregador</option>
+                    </select>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="2" class="text-muted">Nenhum hospital ativo cadastrado.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
           </div>
 
           <div class="mb-4">
