@@ -2,17 +2,19 @@
 {% for item in culturas_com_atb %}
 {% with c=item.cultura %}
 <div class="card card-cultura mb-3 mt-2">
-  <div class="card-header d-flex justify-content-between align-items-center py-2">
+  <div class="card-header py-2">
     <span class="fw-semibold">{{ c.procedimento }}</span>
-    <span class="text-muted small">{{ c.dt_coleta|date:"d/m/Y"|default:"—" }}</span>
   </div>
   <div class="card-body py-2">
     {% if c.microrganismo %}
     <p class="mb-1"><strong>Microrganismo:</strong> {{ c.microrganismo }}</p>
     {% endif %}
     <p class="mb-1 small text-muted">
+      <strong>Resultado:</strong> {{ c.dt_coleta|date:"d/m/Y"|default:"—" }}
+    </p>
+    <p class="mb-1 small text-muted">
       Unidade: {{ c.unidade|default:"—" }} &nbsp;|&nbsp;
-      Resultado: {{ c.dt_assinatura|date:"d/m/Y"|default:"—" }}
+      <strong>Resultado:</strong> {{ c.dt_assinatura|date:"d/m/Y"|default:"—" }}
     </p>
 
     {% if item.antibiograma %}
@@ -24,7 +26,7 @@
         <tbody>
           {% for a in item.antibiograma %}
           <tr>
-            <td>{{ a.antibiotico }}</td>
+            <td class="sens-{{ a.sensibilidade }}">{{ a.antibiotico }}</td>
             <td class="sens-{{ a.sensibilidade }}">{{ a.get_sensibilidade_display }}</td>
           </tr>
           {% endfor %}
