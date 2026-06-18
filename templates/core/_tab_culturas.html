@@ -10,7 +10,7 @@
     <p class="mb-1"><strong>Microrganismo:</strong> {{ c.microrganismo }}</p>
     {% endif %}
     <p class="mb-1 small text-muted">
-      <strong>Resultado:</strong> {{ c.dt_coleta|date:"d/m/Y"|default:"—" }}
+      <strong>Coleta:</strong> {{ c.dt_coleta|date:"d/m/Y"|default:"—" }}
     </p>
     <p class="mb-1 small text-muted">
       Unidade: {{ c.unidade|default:"—" }} &nbsp;|&nbsp;
