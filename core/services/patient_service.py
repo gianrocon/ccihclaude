@@ -103,6 +103,42 @@ def get_periodos_atb(paciente):
     return resultado
 
 
+def get_formulario(hospital):
+    """Antimicrobianos já prescritos neste hospital, normalizados e distintos.
+
+    É a melhor aproximação disponível do formulário da farmácia: o agente de
+    interconsulta só pode sugerir droga que já apareceu aqui, porque o
+    antibiograma do laboratório testa antimicrobianos que a farmácia não
+    dispensa.
+
+    Devolve uma lista de dicts ordenada por nome::
+
+        [{"nome": "MEROPENEM", "n_prescricoes": 412,
+          "primeira": date(...), "ultima": date(...)}, ...]
+    """
+    rows = (
+        ControleAtbRaw.objects.filter(paciente__hospital=hospital)
+        .values_list("medicamento", "dt_inicio")
+    )
+
+    agregado = {}
+    for medicamento, inicio in rows:
+        nome = _normalize_med_name(medicamento or "").upper()
+        if not nome:
+            continue
+        item = agregado.setdefault(
+            nome, {"nome": nome, "n_prescricoes": 0, "primeira": None, "ultima": None}
+        )
+        item["n_prescricoes"] += 1
+        if inicio:
+            if item["primeira"] is None or inicio < item["primeira"]:
+                item["primeira"] = inicio
+            if item["ultima"] is None or inicio > item["ultima"]:
+                item["ultima"] = inicio
+
+    return sorted(agregado.values(), key=lambda x: x["nome"])
+
+
 def get_antibioticos_resistentes_recentes(paciente):
     cultura = paciente.culturas.order_by("-dt_coleta").first()
     if not cultura:
