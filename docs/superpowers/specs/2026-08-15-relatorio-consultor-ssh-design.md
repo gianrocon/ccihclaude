@@ -118,6 +118,54 @@ Casos:
    segue normal.
 4. Hospital inválido/inativo → `CommandError` é levantado.
 
+## Contrato para a skill (uso pelo cliente)
+
+Seção autocontida para quem for implementar a skill do Claude neste notebook
+que consome essa interface — não depende de ler o resto do documento.
+
+### Como chamar
+
+```bash
+ssh gdr@161.35.125.254 "cd ~/ccih && set -a && . ./.env && set +a && ./venv/bin/python manage.py relatorio_consultor --hospital=<SIGLA> [--prontuarios=<p1>,<p2>,...]" > relatorio.md
+```
+
+- `<SIGLA>`: sigla do hospital (ex.: `HT`), a mesma usada no seletor de
+  hospital da aplicação web. Obrigatório.
+- `--prontuarios`: opcional. Lista de números de prontuário separados por
+  vírgula, sem espaços (ex.: `12345,67890`). Se omitido, o relatório traz só
+  a cobertura de dados do hospital, sem seção de pacientes.
+- O `set -a && . ./.env && set +a` é obrigatório — sem carregar o `.env` de
+  produção o comando cai no SQLite local do servidor em vez do PostgreSQL
+  real (mesma pegadinha documentada no `CLAUDE.md` do projeto para qualquer
+  `manage.py` rodado por SSH).
+- Pré-requisito: a chave SSH usada precisa já ter acesso a `gdr@161.35.125.254`
+  (é a mesma usada para deploy). Não há token ou segredo adicional a
+  gerenciar — a skill não precisa guardar nenhuma credencial própria além da
+  chave SSH já configurada no notebook.
+
+### O que a skill recebe
+
+- **stdout**: Markdown puro (ver "Formato de saída" acima) — pode ser salvo
+  direto como `.md` e lido como texto.
+- **stderr + exit code ≠ 0**: erro (hospital inválido/inativo, `.env` não
+  carregado, SSH falhou etc.). A skill deve tratar exit code ≠ 0 como falha
+  e reportar o `stderr` ao usuário em vez de tentar interpretar o stdout.
+- Prontuários individuais não encontrados **não** geram erro — aparecem na
+  seção `## Avisos` do próprio Markdown. A skill deve ler essa seção para
+  saber quais prontuários da lista pedida não retornaram dados.
+
+### Notas para a skill interpretar o conteúdo
+
+- "Cobertura" no relatório é sobre *dados importados* (períodos com culturas
+  ou prescrições de ATB no sistema), não é uma afirmação clínica de que um
+  antibiótico cobre um microrganismo. Não confundir os dois sentidos ao
+  responder o usuário.
+- A tabela de antibiograma por cultura já vem com S/I/R por antibiótico —
+  qualquer inferência clínica (ex.: "esse ATB cobre esse organismo?") é
+  responsabilidade da skill/do modelo, não do relatório.
+- Datas no Markdown estão em formato local (`YYYY-MM-DD`), não ISO com
+  timezone.
+
 ## Fora de escopo
 
 - Skill do Claude / script cliente que chama o SSH e salva o arquivo
