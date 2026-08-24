@@ -363,3 +363,19 @@ def importar_arquivo(path, hospital, usuario=None) -> tuple:
         return tipo, n
     else:
         raise ValueError(f"Tipo de arquivo não reconhecido: {path.name}")
+
+
+def importar_com_validacao(path, hospital, usuario, tipo_esperado: str) -> int:
+    """Recusa o arquivo se o tipo detectado nao bater com tipo_esperado, em vez
+    de importa-lo silenciosamente como outra coisa. Usado pelos comandos SSH
+    dedicados (importar_microbiologia_ssh / importar_atb_ssh), que sao
+    especificos por tipo e nao devem aceitar o arquivo errado."""
+    path = Path(path)
+    tipo = _detect_type(path)
+    if tipo != tipo_esperado:
+        raise ValueError(
+            "Arquivo não reconhecido como '%s' (detectado: '%s')." % (tipo_esperado, tipo)
+        )
+    if tipo_esperado == "microbiologia":
+        return importar_microbiologia(path, hospital, usuario)
+    return importar_controle_atb(path, hospital, usuario)
