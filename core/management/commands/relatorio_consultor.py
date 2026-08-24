@@ -19,6 +19,10 @@ def _fmt_data(d):
     return d.strftime("%Y-%m-%d") if d else "-"
 
 
+def _fmt_upload(dt):
+    return dt.strftime("%Y-%m-%d %H:%M") if dt else "-"
+
+
 def _fmt_cobertura(intervalos):
     if not intervalos:
         return "- Nenhum dado importado.\n"
@@ -93,10 +97,16 @@ class Command(BaseCommand):
             "# Relatorio - %s (%s)" % (hospital.nome, hospital.sigla),
             "Gerado em: %s\n" % datetime.now().strftime("%Y-%m-%d %H:%M"),
             "## Cobertura de dados importados",
-            "### Culturas (microbiologia)",
+            "### Microbiologia",
+            "Data de cobertura:",
             _fmt_cobertura(svc.get_cobertura_culturas(hospital)),
-            "### Prescricoes de antibiotico",
+            "Data de upload: %s\n"
+            % _fmt_upload(svc.get_ultima_importacao(hospital, "microbiologia")),
+            "### Antimicrobianos",
+            "Data de cobertura:",
             _fmt_cobertura(svc.get_cobertura_atb(hospital)),
+            "Data de upload: %s\n"
+            % _fmt_upload(svc.get_ultima_importacao(hospital, "controle_atb")),
         ]
 
         avisos = []

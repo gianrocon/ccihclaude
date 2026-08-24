@@ -26,6 +26,10 @@
               <span class="text-muted">Sem dados.</span>
             {% endif %}
           </div>
+          <div class="card-footer small text-muted">
+            Último upload:
+            {% if upload_micro %}{{ upload_micro|date:"d/m/Y H:i" }}{% else %}—{% endif %}
+          </div>
         </div>
       </div>
 
@@ -42,6 +46,10 @@
             {% else %}
               <span class="text-muted">Sem dados.</span>
             {% endif %}
+          </div>
+          <div class="card-footer small text-muted">
+            Último upload:
+            {% if upload_atb %}{{ upload_atb|date:"d/m/Y H:i" }}{% else %}—{% endif %}
           </div>
         </div>
       </div>

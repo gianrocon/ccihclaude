@@ -48,11 +48,33 @@ class RelatorioConsultorTestCase(TestCase):
         texto = self._run(hospital="HT")
         self.assertIn("# Relatorio - Hospital Teste (HT)", texto)
         self.assertIn("## Cobertura de dados importados", texto)
-        self.assertIn("### Culturas (microbiologia)", texto)
+        self.assertIn("### Microbiologia", texto)
         self.assertIn("2026-07-30 a 2026-07-30", texto)
-        self.assertIn("### Prescricoes de antibiotico", texto)
+        self.assertIn("### Antimicrobianos", texto)
         self.assertIn("2026-07-28 a 2026-07-28", texto)
         self.assertNotIn("## Paciente", texto)
+        self.assertNotIn("Internamento", texto)
+
+    def test_data_de_upload_separada_da_cobertura(self):
+        from core.models import Importacao
+
+        Importacao.objects.create(
+            hospital=self.hospital, arquivo="micro.xlsx",
+            tipo="microbiologia", registros=0,
+        )
+        Importacao.objects.create(
+            hospital=self.hospital, arquivo="atb.xls",
+            tipo="controle_atb", registros=3,
+        )
+        texto = self._run(hospital="HT")
+        self.assertIn("Data de cobertura:", texto)
+        self.assertEqual(texto.count("Data de cobertura:"), 2)
+        self.assertIn("Data de upload:", texto)
+        self.assertEqual(texto.count("Data de upload:"), 2)
+
+    def test_sem_upload_mostra_traco(self):
+        texto = self._run(hospital="HT")
+        self.assertIn("Data de upload: -", texto)
 
     def test_hospital_invalido_leva_commanderror(self):
         with self.assertRaises(CommandError):

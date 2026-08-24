@@ -229,5 +229,17 @@ def get_cobertura_internamentos(hospital):
     return _find_intervals(dates)
 
 
+def get_ultima_importacao(hospital, tipo):
+    """Data/hora do upload mais recente de um .xlsx do tipo dado, mesmo sem
+    novos registros — todo upload reconhecido cria um Importacao (ver
+    importer_service), então isso não precisa de rastreio próprio."""
+    imp = (
+        Importacao.objects.filter(hospital=hospital, tipo=tipo)
+        .order_by("-importado_em")
+        .first()
+    )
+    return imp.importado_em if imp else None
+
+
 def limpar_banco(hospital):
     Paciente.objects.filter(hospital=hospital).delete()

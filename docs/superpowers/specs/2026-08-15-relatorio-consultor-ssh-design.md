@@ -12,9 +12,35 @@ prontuários + hospital e receber:
 1. A cobertura atual de dados importados no hospital, separada em
    microbiologia (culturas) e antibiótico (prescrições) — o mesmo conceito já
    calculado para a tela `/cobertura/` (períodos de datas com dados
-   importados, não cruzamento clínico antibiograma × ATB em uso).
+   importados, não cruzamento clínico antibiograma × ATB em uso). Junto de
+   cada uma, a **data do último upload de planilha** daquele tipo — que é uma
+   coisa diferente da cobertura (ver "Cobertura × upload" abaixo).
 2. Para cada prontuário da lista: as culturas (com antibiograma) e a tabela de
    intervalos de uso de antibiótico.
+
+Internamentos não entram neste relatório — só microbiologia e antimicrobianos
+importam para o consultor.
+
+### Cobertura × upload
+
+Dois conceitos que soam parecidos e não são:
+
+- **Data de cobertura**: intervalo de datas *dos dados clínicos* (o menor e o
+  maior `dt_coleta`/`dt_inicio` já importados) — vem de
+  `get_cobertura_culturas`/`get_cobertura_atb`, calculado a partir das tabelas
+  `Cultura`/`ControleAtbRaw`.
+- **Data de upload**: quando alguém subiu um `.xlsx`/`.xls` pela última vez,
+  reconhecido como daquele tipo — vem de `get_ultima_importacao(hospital,
+  tipo)`, que lê `Importacao.importado_em`.
+
+Um upload registra data mesmo que **nenhuma cultura/prescrição nova** tenha
+sido inserida (planilha repetida, sem novidade) — todo upload reconhecido
+grava um `Importacao` no fim de `importar_microbiologia`/`importar_controle_atb`
+(`core/services/importer_service.py`), independente de `registros` ser 0. Só
+não atualiza quando o arquivo não é reconhecido como nenhum dos formatos
+esperados (`_detect_type` retorna `"desconhecido"` e a importação nem chega a
+rodar) ou quando o cabeçalho esperado não é encontrado — nesses casos a
+exceção é levantada antes do `Importacao.objects.create(...)`.
 
 A resposta deve ser rápida de consultar por uma skill (texto/Markdown, não
 JSON).
@@ -56,6 +82,8 @@ calculado por `core/services/patient_service.py`:
 
 - `get_cobertura_culturas(hospital)` / `get_cobertura_atb(hospital)` — mesmos
   usados por `core/views/report_views.py::cobertura`.
+- `get_ultima_importacao(hospital, tipo)` — idem, lê `Importacao` direto
+  (`tipo` é `"microbiologia"` ou `"controle_atb"`).
 - `get_culturas(paciente)` + `get_antibiograma(cultura)` — mesmos usados pela
   view de detalhe de paciente e pelo endpoint `/api/v1/paciente/`.
 - `get_periodos_atb(paciente)` — intervalos fundidos de uso de antibiótico.
@@ -67,12 +95,18 @@ calculado por `core/services/patient_service.py`:
 Gerado em: <timestamp local>
 
 ## Cobertura de dados importados
-### Culturas (microbiologia)
+### Microbiologia
+Data de cobertura:
 - <intervalo 1>
 - <intervalo 2>
 
-### Prescrições de antibiótico
+Data de upload: <timestamp do último .xlsx de microbiologia reconhecido>
+
+### Antimicrobianos
+Data de cobertura:
 - <intervalo 1>
+
+Data de upload: <timestamp do último .xls de antimicrobianos reconhecido>
 
 ## Paciente <prontuario> — <nome>
 ### Culturas
@@ -160,6 +194,10 @@ ssh gdr@161.35.125.254 "cd ~/ccih && set -a && . ./.env && set +a && ./venv/bin/
   ou prescrições de ATB no sistema), não é uma afirmação clínica de que um
   antibiótico cobre um microrganismo. Não confundir os dois sentidos ao
   responder o usuário.
+- "Data de cobertura" (intervalo dos dados clínicos) e "Data de upload"
+  (quando a planilha foi importada pela última vez) são coisas diferentes —
+  ver seção "Cobertura × upload" acima. A data de upload pode ser recente
+  mesmo que a cobertura não tenha avançado (planilha reenviada sem novidade).
 - A tabela de antibiograma por cultura já vem com S/I/R por antibiótico —
   qualquer inferência clínica (ex.: "esse ATB cobre esse organismo?") é
   responsabilidade da skill/do modelo, não do relatório.
