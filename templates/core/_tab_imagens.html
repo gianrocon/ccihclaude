@@ -19,25 +19,19 @@
 {% endif %}
 
 {% if imagens_exame %}
-<div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-3">
+<div class="list-group mt-2">
   {% for img in imagens_exame %}
-  <div class="col">
-    <div class="card h-100">
-      <div class="ratio ratio-1x1 bg-light d-flex align-items-center justify-content-center">
-        <span class="fs-1">🩻</span>
-      </div>
-      <div class="card-body p-2 text-center">
-        <div class="fw-semibold small mb-2">{{ img.dt_exame|date:"d/m/Y" }}</div>
-        <a href="{% url 'imagem_download' pk=img.pk %}" class="btn btn-outline-primary btn-sm">⬇ Baixar</a>
-        {% if request.papel_atual == "carregador" %}
-        <form method="post" action="{% url 'imagem_remover' pk=img.pk %}"
-              onsubmit="return confirm('Remover esta imagem?');" class="mt-1">
-          {% csrf_token %}
-          <button type="submit" class="btn btn-outline-danger btn-sm">Remover</button>
-        </form>
-        {% endif %}
-      </div>
-    </div>
+  <div class="list-group-item d-flex align-items-center gap-3">
+    <span class="fs-4">🩻</span>
+    <span class="fw-semibold me-auto">{{ img.dt_exame|date:"d/m/Y" }}</span>
+    <a href="{% url 'imagem_download' pk=img.pk %}" class="btn btn-outline-primary btn-sm">⬇ Baixar</a>
+    {% if request.papel_atual == "carregador" %}
+    <form method="post" action="{% url 'imagem_remover' pk=img.pk %}"
+          onsubmit="return confirm('Remover esta imagem?');">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline-danger btn-sm">Remover</button>
+    </form>
+    {% endif %}
   </div>
   {% endfor %}
 </div>
