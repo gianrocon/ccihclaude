@@ -28,7 +28,7 @@
       </div>
       <div class="card-body p-2 text-center">
         <div class="fw-semibold small mb-2">{{ img.dt_exame|date:"d/m/Y" }}</div>
-        <a href="{{ img.imagem.url }}" download class="btn btn-outline-primary btn-sm">⬇ Baixar</a>
+        <a href="{% url 'imagem_download' pk=img.pk %}" class="btn btn-outline-primary btn-sm">⬇ Baixar</a>
         {% if request.papel_atual == "carregador" %}
         <form method="post" action="{% url 'imagem_remover' pk=img.pk %}"
               onsubmit="return confirm('Remover esta imagem?');" class="mt-1">

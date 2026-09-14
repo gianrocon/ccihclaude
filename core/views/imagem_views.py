@@ -1,7 +1,9 @@
 from datetime import datetime
+from pathlib import Path
 
 from django.contrib import messages
-from django.http import Http404
+from django.contrib.auth.decorators import login_required
+from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect
 
 from core.models import ImagemExame, Paciente
@@ -47,6 +49,16 @@ def imagem_upload(request, pk):
                 messages.success(request, "Imagem enviada com sucesso.")
 
     return redirect("paciente_detalhe", pk=paciente.pk)
+
+
+@login_required
+def imagem_download(request, pk):
+    imagem = get_object_or_404(ImagemExame, pk=pk)
+    if imagem.paciente.hospital != request.hospital_atual:
+        raise Http404
+
+    nome_arquivo = f"{imagem.paciente.prontuario}_{imagem.dt_exame:%Y-%m-%d}{Path(imagem.imagem.name).suffix.lower()}"
+    return FileResponse(imagem.imagem.open("rb"), as_attachment=True, filename=nome_arquivo)
 
 
 @carregador_required

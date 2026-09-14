@@ -5,13 +5,14 @@ from core.views.import_views import importar, limpar_banco
 from core.views.report_views import cobertura
 from core.views.admin_views import gerenciar_usuarios, editar_usuario
 from core.views.hospital_views import selecionar_hospital
-from core.views.imagem_views import imagem_upload, imagem_remover
+from core.views.imagem_views import imagem_upload, imagem_remover, imagem_download
 
 urlpatterns = [
     path("", busca, name="busca"),
     path("paciente/<int:pk>/", paciente_detalhe, name="paciente_detalhe"),
     path("paciente/<int:pk>/imagens/upload/", imagem_upload, name="imagem_upload"),
     path("imagens/<int:pk>/remover/", imagem_remover, name="imagem_remover"),
+    path("imagens/<int:pk>/download/", imagem_download, name="imagem_download"),
     path("importar/", importar, name="importar"),
     path("limpar/", limpar_banco, name="limpar_banco"),
     path("cobertura/", cobertura, name="cobertura"),
