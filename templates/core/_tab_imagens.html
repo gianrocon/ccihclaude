@@ -1,0 +1,46 @@
+{% if request.papel_atual == "carregador" %}
+<form method="post" action="{% url 'imagem_upload' pk=paciente.pk %}" enctype="multipart/form-data"
+      class="row gy-2 gx-2 align-items-end mt-2 mb-4">
+  {% csrf_token %}
+  <div class="col-auto">
+    <label for="id_imagem" class="form-label mb-0">Imagem (radiografia de tórax)</label>
+    <input type="file" name="imagem" id="id_imagem" class="form-control form-control-sm"
+           accept=".png,.jpg,.jpeg,image/png,image/jpeg" required>
+    <div class="form-text">PNG ou JPG/JPEG, até 700 KB.</div>
+  </div>
+  <div class="col-auto">
+    <label for="id_dt_exame" class="form-label mb-0">Data do exame</label>
+    <input type="date" name="dt_exame" id="id_dt_exame" class="form-control form-control-sm" required>
+  </div>
+  <div class="col-auto">
+    <button type="submit" class="btn btn-primary btn-sm">Enviar imagem</button>
+  </div>
+</form>
+{% endif %}
+
+{% if imagens_exame %}
+<div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-3">
+  {% for img in imagens_exame %}
+  <div class="col">
+    <div class="card h-100">
+      <div class="ratio ratio-1x1 bg-dark">
+        <img src="{{ img.imagem.url }}" class="w-100 h-100" style="object-fit: contain;"
+             alt="Radiografia de tórax — {{ img.dt_exame|date:'d/m/Y' }}">
+      </div>
+      <div class="card-body p-2 text-center">
+        <div class="fw-semibold small">{{ img.dt_exame|date:"d/m/Y" }}</div>
+        {% if request.papel_atual == "carregador" %}
+        <form method="post" action="{% url 'imagem_remover' pk=img.pk %}"
+              onsubmit="return confirm('Remover esta imagem?');" class="mt-1">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-danger btn-sm">Remover</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p class="text-muted mt-3">Nenhuma imagem cadastrada para este paciente.</p>
+{% endif %}

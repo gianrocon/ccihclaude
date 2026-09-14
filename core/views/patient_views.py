@@ -32,6 +32,7 @@ def paciente_detalhe(request, pk):
     periodos_atb  = patient_service.get_periodos_atb(paciente)
     internamentos = patient_service.get_internamentos(paciente)
     resistentes   = patient_service.get_antibioticos_resistentes_recentes(paciente)
+    imagens_exame = patient_service.get_imagens_exame(paciente)
 
     culturas_com_atb = []
     for c in culturas:
@@ -58,4 +59,5 @@ def paciente_detalhe(request, pk):
         "resistentes":     resistentes_norm,
         "gantt_atb_b64":   gantt_atb_b64,
         "gantt_int_b64":   gantt_int_b64,
+        "imagens_exame":   imagens_exame,
     })

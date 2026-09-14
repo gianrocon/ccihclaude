@@ -1,3 +1,6 @@
+import uuid
+from pathlib import Path
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
@@ -209,6 +212,40 @@ class Internamento(models.Model):
 
     def __str__(self):
         return f"{self.dt_entrada} — {self.dt_alta} ({self.dias}d)"
+
+
+def imagem_exame_upload_to(instance, filename):
+    ext = Path(filename).suffix.lower()
+    return f"imagens_exame/{instance.paciente.hospital_id}/{instance.paciente_id}/{uuid.uuid4()}{ext}"
+
+
+class ImagemExame(models.Model):
+    paciente = models.ForeignKey(
+        Paciente,
+        on_delete=models.CASCADE,
+        related_name="imagens_exame",
+        verbose_name="Paciente",
+    )
+    imagem = models.ImageField(
+        upload_to=imagem_exame_upload_to,
+        verbose_name="Imagem",
+    )
+    dt_exame = models.DateField(verbose_name="Data do Exame")
+    enviado_por = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name="Enviado por",
+    )
+    criado_em = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
+
+    class Meta:
+        verbose_name = "Imagem de Exame"
+        verbose_name_plural = "Imagens de Exame"
+        ordering = ["-dt_exame", "-criado_em"]
+
+    def __str__(self):
+        return f"{self.paciente} — {self.dt_exame}"
 
 
 class Importacao(models.Model):

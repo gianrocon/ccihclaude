@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import Hospital, CustomUser, Vinculo, Importacao, Paciente, Cultura, Antibiograma, ControleAtbRaw, Internamento
+from .models import Hospital, CustomUser, Vinculo, Importacao, Paciente, Cultura, Antibiograma, ControleAtbRaw, Internamento, ImagemExame
 
 
 @admin.register(Hospital)
@@ -74,3 +74,11 @@ class InternamentoAdmin(admin.ModelAdmin):
     list_filter = ["paciente__hospital"]
     search_fields = ["paciente__prontuario", "paciente__nome"]
     readonly_fields = [f.name for f in Internamento._meta.fields]
+
+
+@admin.register(ImagemExame)
+class ImagemExameAdmin(admin.ModelAdmin):
+    list_display = ["paciente", "dt_exame", "enviado_por", "criado_em"]
+    list_filter = ["paciente__hospital"]
+    search_fields = ["paciente__prontuario", "paciente__nome"]
+    readonly_fields = [f.name for f in ImagemExame._meta.fields]

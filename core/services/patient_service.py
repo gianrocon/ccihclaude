@@ -3,7 +3,7 @@ from datetime import date, timedelta
 
 from django.db.models import Q
 
-from core.models import Paciente, Cultura, ControleAtbRaw, Internamento, Importacao
+from core.models import Paciente, Cultura, ControleAtbRaw, Internamento, Importacao, ImagemExame
 
 
 def upsert_paciente(prontuario, nome, hospital):
@@ -243,3 +243,7 @@ def get_ultima_importacao(hospital, tipo):
 
 def limpar_banco(hospital):
     Paciente.objects.filter(hospital=hospital).delete()
+
+
+def get_imagens_exame(paciente):
+    return ImagemExame.objects.filter(paciente=paciente).order_by("-dt_exame", "-criado_em")
