@@ -127,10 +127,23 @@ class ImportarAtbSshTestCase(TestCase):
 
     def test_extensao_errada_e_recusada(self):
         with tempfile.TemporaryDirectory() as tmp:
-            path = Path(tmp) / "arquivo.xlsx"
+            path = Path(tmp) / "arquivo.csv"
             path.write_bytes(b"fake")
             with self.assertRaises(CommandError):
                 self._run(hospital="HT", arquivo=str(path))
+
+    @patch("core.services.importer_service.importar_com_validacao")
+    def test_xlsx_e_aceito(self, mock_importar):
+        mock_importar.return_value = 3
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "atb.xlsx"
+            path.write_bytes(b"fake")
+            texto = self._run(hospital="HT", arquivo=str(path))
+
+        self.assertIn("3 registro(s) importado(s)", texto)
+        args, _ = mock_importar.call_args
+        self.assertEqual(args[0], path)
+        self.assertEqual(args[3], "controle_atb")
 
     def test_hospital_invalido(self):
         with tempfile.TemporaryDirectory() as tmp:

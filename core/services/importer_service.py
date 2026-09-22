@@ -195,15 +195,29 @@ _XLS_COL_MEDICO    = 16
 _XLS_COL_ACOM      = 14
 
 
+def _find_col(row_vals, *keywords):
+    for i, cell in enumerate(row_vals):
+        if cell is None:
+            continue
+        cell_s = str(cell).strip().lower()
+        for kw in keywords:
+            if kw in cell_s:
+                return i
+    return None
+
+
 def importar_controle_atb(path: Path, hospital, usuario=None) -> int:
     path = Path(path)
     ext = path.suffix.lower()
 
-    if ext == ".xls":
-        wb = xlrd.open_workbook(str(path), encoding_override="cp1252")
-        ws = wb.sheet_by_index(0)
-    else:
-        raise ValueError(f"Use .xls para arquivo de controle ATB (recebido: {ext})")
+    if ext == ".xlsx":
+        return _importar_controle_atb_xlsx(path, hospital, usuario)
+
+    if ext != ".xls":
+        raise ValueError(f"Use .xls ou .xlsx para arquivo de controle ATB (recebido: {ext})")
+
+    wb = xlrd.open_workbook(str(path), encoding_override="cp1252")
+    ws = wb.sheet_by_index(0)
 
     inserted = 0
     current_pront = None
@@ -250,6 +264,139 @@ def importar_controle_atb(path: Path, hospital, usuario=None) -> int:
                 medicamento = nstr(_XLS_COL_MED)
                 dias_em_uso = nint(_XLS_COL_DIAS_USO)
                 medico      = nstr(_XLS_COL_MEDICO)
+
+                if not medicamento:
+                    continue
+
+                pac = upsert_paciente(current_pront, current_nome, hospital)
+                dt_inicio = _parse_date(dt_inicio_str)
+
+                obj, created = ControleAtbRaw.objects.get_or_create(
+                    paciente=pac,
+                    medicamento=medicamento,
+                    dt_inicio=dt_inicio,
+                    defaults={
+                        "acomodacao": current_acom,
+                        "dias_solic":  dias_solic,
+                        "dias_ccih":   dias_ccih,
+                        "dias_em_uso": dias_em_uso,
+                        "medico":      medico,
+                    },
+                )
+                if created:
+                    inserted += 1
+                else:
+                    changed = (
+                        dias_em_uso > obj.dias_em_uso
+                        or dias_solic > obj.dias_solic
+                        or dias_ccih > obj.dias_ccih
+                    )
+                    if changed:
+                        obj.dias_solic  = max(dias_solic,  obj.dias_solic)
+                        obj.dias_ccih   = max(dias_ccih,   obj.dias_ccih)
+                        obj.dias_em_uso = max(dias_em_uso, obj.dias_em_uso)
+                        obj.save()
+                        inserted += 1
+
+    Importacao.objects.create(
+        hospital=hospital, usuario=usuario,
+        arquivo=path.name, tipo="controle_atb", registros=inserted,
+    )
+    return inserted
+
+
+def _importar_controle_atb_xlsx(path: Path, hospital, usuario=None) -> int:
+    # read_only=True usa o parser em streaming do openpyxl, que nesta planilha
+    # (exportada pelo SMPEP) só retorna a coluna A de cada linha, perdendo os
+    # demais valores. Carregar o workbook completo evita isso.
+    wb = openpyxl.load_workbook(path, read_only=False, data_only=True)
+    ws = wb.active
+    rows = list(ws.iter_rows(values_only=True))
+    wb.close()
+
+    inserted = 0
+    current_pront = None
+    current_nome = ""
+    current_acom = ""
+    esperando_paciente = False
+    col_paciente = col_acomod = None
+    col_dias_sol = col_dias_ccih = col_med = col_dias_uso = col_medico = None
+
+    with transaction.atomic():
+        for row_vals in rows:
+            if not any(v is not None for v in row_vals):
+                continue
+
+            col0 = row_vals[0]
+            v0s = str(col0).strip() if col0 is not None else ""
+            v0l = v0s.lower()
+
+            if "impresso em" in v0l:
+                break
+
+            if v0l in ("prontuário", "prontuario"):
+                col_paciente = _find_col(row_vals, "paciente")
+                col_acomod = _find_col(row_vals, "acomoda")
+                esperando_paciente = True
+                continue
+
+            if esperando_paciente:
+                esperando_paciente = False
+                current_pront = _os_str(v0s)
+                current_nome = (
+                    str(row_vals[col_paciente]).strip()
+                    if col_paciente is not None and row_vals[col_paciente] is not None
+                    else ""
+                )
+                current_acom = (
+                    str(row_vals[col_acomod]).strip()
+                    if col_acomod is not None and row_vals[col_acomod] is not None
+                    else ""
+                )
+                continue
+
+            if v0l in ("início", "inicio"):
+                col_dias_sol = _find_col(row_vals, "dias solic")
+                col_dias_ccih = _find_col(row_vals, "dias ccih")
+                col_med = _find_col(row_vals, "medicamento")
+                col_dias_uso = _find_col(row_vals, "dias em uso")
+                col_medico = _find_col(row_vals, "médico", "medico")
+                continue
+
+            if isinstance(col0, (datetime, date)) and current_pront:
+                dt_inicio_str = _excel_serial_to_date(col0)
+
+                # Devido a células mescladas na planilha (o texto do cabeçalho
+                # nem sempre fica na mesma coluna do valor correspondente nas
+                # linhas de dados, ex.: "Medicamento" mescla de forma diferente
+                # do texto do medicamento em si), procura o valor a partir da
+                # coluna do cabeçalho, avançando algumas colunas se necessário.
+                def _achar(col, largura=3):
+                    if col is None:
+                        return None
+                    for c in range(col, min(col + largura, len(row_vals))):
+                        if row_vals[c] is not None:
+                            return row_vals[c]
+                    return None
+
+                def nint(col):
+                    v = _achar(col)
+                    if v is None:
+                        return 0
+                    try:
+                        return int(float(v))
+                    except Exception:
+                        return 0
+
+                def nstr(col):
+                    v = _achar(col)
+                    return str(v).strip() if v is not None else ""
+
+                dias_solic = nint(col_dias_sol)
+                dias_ccih = nint(col_dias_ccih)
+                medicamento = nstr(col_med)
+                dias_em_uso = nint(col_dias_uso)
+                medico = nstr(col_medico)
 
                 if not medicamento:
                     continue

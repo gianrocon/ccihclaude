@@ -16,11 +16,11 @@ from core.services import importer_service
 
 
 class Command(BaseCommand):
-    help = "Importa planilha de controle de antimicrobianos (.xls) via SSH, igual ao upload pela pagina /importar/."
+    help = "Importa planilha de controle de antimicrobianos (.xls ou .xlsx) via SSH, igual ao upload pela pagina /importar/."
 
     def add_arguments(self, parser):
         parser.add_argument("--hospital", required=True, help="Sigla do hospital")
-        parser.add_argument("--arquivo", required=True, help="Caminho do .xls no servidor")
+        parser.add_argument("--arquivo", required=True, help="Caminho do .xls/.xlsx no servidor")
         parser.add_argument(
             "--usuario", default="",
             help="Username a registrar em Importacao.usuario (opcional)",
@@ -35,8 +35,8 @@ class Command(BaseCommand):
         path = Path(options["arquivo"])
         if not path.is_file():
             raise CommandError("Arquivo nao encontrado: %s" % path)
-        if path.suffix.lower() != ".xls":
-            raise CommandError("Controle ATB exige .xls (recebido: %s)" % path.suffix)
+        if path.suffix.lower() not in (".xls", ".xlsx"):
+            raise CommandError("Controle ATB exige .xls ou .xlsx (recebido: %s)" % path.suffix)
 
         usuario = None
         username = options["usuario"].strip()
