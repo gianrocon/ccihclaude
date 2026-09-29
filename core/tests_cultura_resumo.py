@@ -80,7 +80,7 @@ class TextoTests(SimpleTestCase):
             {"cultura": _cult("UROCULTURA", "Enterococcus faecalis", dia=4),
              "antibiograma": [_atb("VANCOMICINA", "S"), _atb("AMPICILINA", "S"),
                               _atb("NITROFURANTOINA", "S")]},
-            {"cultura": _cult("UROCULTURA", "Proteus mirabilis", dia=5),
+            {"cultura": _cult("UROCULTURA COM CONTAGEM DE COLÔNIAS - JATO MÉDIO", "Proteus mirabilis", dia=5),
              "antibiograma": [_atb("CEFTAZIDIMA/AVIBACTAM", "S"), _atb("CEFTAZIDIMA", "R")]},
         ]
         self.assertEqual(texto_culturas_positivas(itens).splitlines(), [

@@ -240,6 +240,8 @@ def _material(cultura) -> str:
     # "HEMOCULTURA PARA AERÓBIOS - 2ª AMOSTRA" vira só "HEMOCULTURA"
     if is_hemocultura(cultura):
         return "HEMOCULTURA"
+    if "UROCULTURA" in _norm(cultura.procedimento):
+        return "UROCULTURA"
     return " ".join(cultura.procedimento.split())
 
 
