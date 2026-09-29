@@ -242,7 +242,8 @@ def _material(cultura) -> str:
         return "HEMOCULTURA"
     if "UROCULTURA" in _norm(cultura.procedimento):
         return "UROCULTURA"
-    return " ".join(cultura.procedimento.split())
+    # sem hífen sobrando no fim/início do nome, que ficaria colado à data
+    return " ".join(cultura.procedimento.split()).strip(" -–")
 
 
 def linha_cultura(cultura, antibiograma) -> str:

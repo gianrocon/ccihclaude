@@ -73,7 +73,7 @@ class TextoTests(SimpleTestCase):
             {"cultura": _cult("HEMOCULTURA", "Staphylococcus aureus", "Sensível à vancomicina.", 2),
              "antibiograma": [_atb("OXACILINA", "R"), _atb("CLINDAMICINA", "R"),
                               _atb("SULFAMETOXAZOL/TRIMETOPRIM", "S")]},
-            {"cultura": _cult("CULTURA DE LÍQUIDO", "Acinetobacter baumannii", "Polimixina B: sensível", 3),
+            {"cultura": _cult("CULTURA DE LÍQUIDO -", "Acinetobacter baumannii", "Polimixina B: sensível", 3),
              "antibiograma": [_atb("MEROPENEM", "R"), _atb("AMPICILINA/SULBACTAM", "I"),
                               _atb("AMICACINA", "S")]},
             {"cultura": _cult("UROCULTURA", "Negativo"), "antibiograma": []},
