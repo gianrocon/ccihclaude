@@ -1,4 +1,9 @@
 {% if periodos_atb %}
+<div class="d-flex justify-content-end mt-2">
+  <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-copiar-atb">📋 Copiar</button>
+</div>
+<textarea id="atb-copia-texto" class="d-none" readonly>{% for p in periodos_atb %}{{ p.inicio|date:"d/m/Y" }} - {{ p.medicamento }}{% if not forloop.last %}
+{% endif %}{% endfor %}</textarea>
 <div class="table-responsive mt-2">
   <table class="table table-sm table-hover align-middle">
     <thead class="table-light">
@@ -27,6 +32,30 @@
   <img src="data:image/png;base64,{{ gantt_atb_b64 }}" class="img-fluid w-100" alt="Linha do tempo ATB">
 </div>
 {% endif %}
+
+<script>
+  document.getElementById("btn-copiar-atb").addEventListener("click", async function () {
+    const btn = this;
+    const src = document.getElementById("atb-copia-texto");
+    const texto = src.value;
+    try {
+      await navigator.clipboard.writeText(texto);
+    } catch (e) {
+      // Fallback para contextos sem HTTPS, onde a Clipboard API não está disponível
+      const ta = document.createElement("textarea");
+      ta.value = texto;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+    const original = btn.textContent;
+    btn.textContent = "✔ Copiado";
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  });
+</script>
 
 {% else %}
 <p class="text-muted mt-3">Sem registros de antibióticos para este paciente.</p>
