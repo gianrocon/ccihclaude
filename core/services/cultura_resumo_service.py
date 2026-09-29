@@ -232,9 +232,20 @@ def _texto_antibiograma(cultura, antibiograma) -> str:
     return " ".join(f"{s}-{por_sigla[s]}" for s in siglas)
 
 
+def is_hemocultura(cultura) -> bool:
+    return "HEMOCULTURA" in _norm(cultura.procedimento)
+
+
+def _material(cultura) -> str:
+    # "HEMOCULTURA PARA AERÓBIOS - 2ª AMOSTRA" vira só "HEMOCULTURA"
+    if is_hemocultura(cultura):
+        return "HEMOCULTURA"
+    return " ".join(cultura.procedimento.split())
+
+
 def linha_cultura(cultura, antibiograma) -> str:
     data = cultura.dt_coleta or cultura.dt_assinatura
-    partes = [" ".join(cultura.procedimento.split())]
+    partes = [_material(cultura)]
     if data:
         partes.append(data.strftime("%d/%m/%Y"))
     obs = " ".join((cultura.obs or "").split()).rstrip(" .;")
@@ -249,11 +260,30 @@ def linha_cultura(cultura, antibiograma) -> str:
 
 
 def texto_culturas_positivas(culturas_com_atb) -> str:
-    """``culturas_com_atb``: lista de ``{"cultura": c, "antibiograma": [...]}``."""
-    linhas = []
+    """``culturas_com_atb``: lista de ``{"cultura": c, "antibiograma": [...]}``.
+
+    Hemoculturas (1ª/2ª amostra) da mesma data com o mesmo microrganismo viram
+    uma linha só — a de antibiograma mais completo. Microrganismos
+    discordantes entre as amostras saem em linhas separadas.
+    """
+    linhas = []  # [chave_hemocultura_ou_None, texto, n_antibioticos]
+    por_chave = {}
     for item in culturas_com_atb:
         c = item["cultura"]
         if is_swab(c) or not is_positiva(c):
             continue
-        linhas.append(linha_cultura(c, item["antibiograma"]))
-    return "\n".join(linhas)
+        texto = linha_cultura(c, item["antibiograma"])
+        n_atb = len(_texto_antibiograma(c, item["antibiograma"]).split())
+        if not is_hemocultura(c):
+            linhas.append([None, texto, n_atb])
+            continue
+        chave = (c.dt_coleta or c.dt_assinatura,
+                 " ".join(_norm(c.microrganismo).split()))
+        if chave in por_chave:
+            existente = por_chave[chave]
+            if n_atb > existente[2]:
+                existente[1], existente[2] = texto, n_atb
+            continue
+        por_chave[chave] = [chave, texto, n_atb]
+        linhas.append(por_chave[chave])
+    return "\n".join(l[1] for l in linhas)

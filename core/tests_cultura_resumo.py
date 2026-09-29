@@ -91,6 +91,32 @@ class TextoTests(SimpleTestCase):
             "UROCULTURA - 05/09/2026 - Proteus mirabilis: CAZ-R.",
         ])
 
+    def test_hemocultura_amostras(self):
+        proc1 = "HEMOCULTURA PARA AERÓBIOS - 1ª AMOSTRA"
+        proc2 = "HEMOCULTURA PARA AERÓBIOS - 2ª AMOSTRA"
+        itens = [
+            # mesma data e mesmo microrganismo nas duas amostras: uma linha só,
+            # a de antibiograma mais completo
+            {"cultura": _cult(proc2, "Staphylococcus aureus", dia=9),
+             "antibiograma": [_atb("GENTAMICINA", "S")]},
+            {"cultura": _cult(proc1, "Staphylococcus aureus", dia=9),
+             "antibiograma": [_atb("CIPROFLOXACINO", "I"), _atb("GENTAMICINA", "S")]},
+            # microrganismos discordantes na mesma data: as duas
+            {"cultura": _cult(proc1, "Acinetobacter baumannii", dia=18),
+             "antibiograma": [_atb("MEROPENEM", "S")]},
+            {"cultura": _cult(proc2, "Klebsiella pneumoniae", dia=18),
+             "antibiograma": [_atb("MEROPENEM", "R")]},
+            # só uma amostra positiva
+            {"cultura": _cult(proc1, "Negativo", dia=26), "antibiograma": []},
+            {"cultura": _cult(proc2, "Staphylococcus aureus", dia=26), "antibiograma": []},
+        ]
+        self.assertEqual(texto_culturas_positivas(itens).splitlines(), [
+            "HEMOCULTURA - 09/09/2026 - Staphylococcus aureus: CIP-I GEN-S.",
+            "HEMOCULTURA - 18/09/2026 - Acinetobacter baumannii: MEM-S.",
+            "HEMOCULTURA - 18/09/2026 - Klebsiella pneumoniae: MEM-R.",
+            "HEMOCULTURA - 26/09/2026 - Staphylococcus aureus.",
+        ])
+
     def test_microrganismo_fora_dos_paineis_traz_tudo(self):
         itens = [{"cultura": _cult("HEMOCULTURA", "Staphylococcus epidermidis"),
                   "antibiograma": [_atb("OXACILINA", "R"), _atb("LINEZOLIDA", "S")]}]
