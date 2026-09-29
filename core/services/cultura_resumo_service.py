@@ -2,7 +2,7 @@
 
 Formato de cada linha::
 
-    MATERIAL - dd/mm/aaaa - OBS - Microrganismo: MEM-R CIP-S TZP-I.
+    MATERIAL dd/mm/aa OBS - Microrganismo: MEM-R CIP-S TZP-I.
 
 - Só culturas positivas (com microrganismo isolado); culturas de swab nunca entram.
 - Antibióticos em siglas de 3 letras (padrão WHONET/EUCAST), cada um seguido de
@@ -245,14 +245,15 @@ def _material(cultura) -> str:
 
 def linha_cultura(cultura, antibiograma) -> str:
     data = cultura.dt_coleta or cultura.dt_assinatura
-    partes = [_material(cultura)]
+    cabeca = _material(cultura)
     if data:
-        partes.append(data.strftime("%d/%m/%Y"))
+        cabeca += " " + data.strftime("%d/%m/%y")
+    partes = []
     obs = " ".join((cultura.obs or "").split()).rstrip(" .;")
     if obs:
         partes.append(obs)
     partes.append(" ".join(cultura.microrganismo.split()))
-    texto = " - ".join(p for p in partes if p)
+    texto = cabeca + " " + " - ".join(p for p in partes if p)
     atb = _texto_antibiograma(cultura, antibiograma)
     if atb:
         texto += ": " + atb

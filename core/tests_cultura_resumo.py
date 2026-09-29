@@ -84,11 +84,11 @@ class TextoTests(SimpleTestCase):
              "antibiograma": [_atb("CEFTAZIDIMA/AVIBACTAM", "S"), _atb("CEFTAZIDIMA", "R")]},
         ]
         self.assertEqual(texto_culturas_positivas(itens).splitlines(), [
-            "CULTURA DE VIGILÂNCIA - 01/09/2026 - Produtor de KPC - Klebsiella pneumoniae: MEM-R CIP-I TZP-R.",
-            "HEMOCULTURA - 02/09/2026 - Sensível à vancomicina - Staphylococcus aureus: SXT-S OXA-R VAN-S.",
-            "CULTURA DE LÍQUIDO - 03/09/2026 - Polimixina B: sensível - Acinetobacter baumannii: MEM-R SAM-I PMB-S.",
-            "UROCULTURA - 04/09/2026 - Enterococcus faecalis: AMP-S VAN-S.",
-            "UROCULTURA - 05/09/2026 - Proteus mirabilis: CAZ-R.",
+            "CULTURA DE VIGILÂNCIA 01/09/26 Produtor de KPC - Klebsiella pneumoniae: MEM-R CIP-I TZP-R.",
+            "HEMOCULTURA 02/09/26 Sensível à vancomicina - Staphylococcus aureus: SXT-S OXA-R VAN-S.",
+            "CULTURA DE LÍQUIDO 03/09/26 Polimixina B: sensível - Acinetobacter baumannii: MEM-R SAM-I PMB-S.",
+            "UROCULTURA 04/09/26 Enterococcus faecalis: AMP-S VAN-S.",
+            "UROCULTURA 05/09/26 Proteus mirabilis: CAZ-R.",
         ])
 
     def test_hemocultura_amostras(self):
@@ -111,17 +111,17 @@ class TextoTests(SimpleTestCase):
             {"cultura": _cult(proc2, "Staphylococcus aureus", dia=26), "antibiograma": []},
         ]
         self.assertEqual(texto_culturas_positivas(itens).splitlines(), [
-            "HEMOCULTURA - 09/09/2026 - Staphylococcus aureus: CIP-I GEN-S.",
-            "HEMOCULTURA - 18/09/2026 - Acinetobacter baumannii: MEM-S.",
-            "HEMOCULTURA - 18/09/2026 - Klebsiella pneumoniae: MEM-R.",
-            "HEMOCULTURA - 26/09/2026 - Staphylococcus aureus.",
+            "HEMOCULTURA 09/09/26 Staphylococcus aureus: CIP-I GEN-S.",
+            "HEMOCULTURA 18/09/26 Acinetobacter baumannii: MEM-S.",
+            "HEMOCULTURA 18/09/26 Klebsiella pneumoniae: MEM-R.",
+            "HEMOCULTURA 26/09/26 Staphylococcus aureus.",
         ])
 
     def test_microrganismo_fora_dos_paineis_traz_tudo(self):
         itens = [{"cultura": _cult("HEMOCULTURA", "Staphylococcus epidermidis"),
                   "antibiograma": [_atb("OXACILINA", "R"), _atb("LINEZOLIDA", "S")]}]
         self.assertEqual(texto_culturas_positivas(itens),
-                         "HEMOCULTURA - 01/09/2026 - Staphylococcus epidermidis: OXA-R LNZ-S.")
+                         "HEMOCULTURA 01/09/26 Staphylococcus epidermidis: OXA-R LNZ-S.")
 
 
 class ViewTests(TestCase):
@@ -140,6 +140,6 @@ class ViewTests(TestCase):
         self.client.force_login(user)
         from django.urls import reverse
         resp = self.client.get(reverse("paciente_detalhe", args=[pac.pk]))
-        self.assertContains(resp, "HEMOCULTURA - 01/09/2026 - Vancomicina: sensível - "
+        self.assertContains(resp, "HEMOCULTURA 01/09/26 Vancomicina: sensível - "
                                   "Staphylococcus aureus: OXA-R VAN-S.")
         self.assertContains(resp, 'data-copiar="culturas-copia-texto"')
