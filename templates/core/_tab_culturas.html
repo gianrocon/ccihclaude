@@ -1,4 +1,11 @@
 {% if culturas_com_atb %}
+{% if texto_culturas_copia %}
+<div class="d-flex justify-content-end mt-2">
+  <button type="button" class="btn btn-sm btn-outline-secondary" data-copiar="culturas-copia-texto"
+          title="Copia as culturas positivas (exceto swab)">📋 Copiar positivas</button>
+</div>
+<textarea id="culturas-copia-texto" class="d-none" readonly>{{ texto_culturas_copia }}</textarea>
+{% endif %}
 {% for item in culturas_com_atb %}
 {% with c=item.cultura %}
 <div class="card card-cultura mb-3 mt-2">
@@ -17,7 +24,7 @@
       <strong>Resultado:</strong> {{ c.dt_assinatura|date:"d/m/Y"|default:"—" }}
     </p>
 
-    {% if item.antibiograma %}
+    {% if item.antibiograma or item.antibiograma_obs %}
     <div class="table-responsive mt-2">
       <table class="table table-sm table-bordered mb-1" style="max-width:480px;">
         <thead class="table-light">
@@ -28,6 +35,12 @@
           <tr>
             <td class="sens-{{ a.sensibilidade }}">{{ a.antibiotico }}</td>
             <td class="sens-{{ a.sensibilidade }}">{{ a.get_sensibilidade_display }}</td>
+          </tr>
+          {% endfor %}
+          {% for a in item.antibiograma_obs %}
+          <tr title="Extraído da observação">
+            <td class="sens-{{ a.sensibilidade }}">{{ a.sigla }} <small class="text-muted">(obs)</small></td>
+            <td class="sens-{{ a.sensibilidade }}">{% if a.sensibilidade == "S" %}Sensível{% elif a.sensibilidade == "I" %}Intermediário{% else %}Resistente{% endif %}</td>
           </tr>
           {% endfor %}
         </tbody>

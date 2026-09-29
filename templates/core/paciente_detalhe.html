@@ -68,5 +68,28 @@
       sessionStorage.setItem(tabKey, e.target.dataset.bsTarget);
     });
   });
+
+  // Botões "Copiar": copiam o conteúdo do textarea indicado em data-copiar
+  document.querySelectorAll("[data-copiar]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const texto = document.getElementById(btn.dataset.copiar).value;
+      try {
+        await navigator.clipboard.writeText(texto);
+      } catch (e) {
+        // Fallback para contextos sem HTTPS, onde a Clipboard API não está disponível
+        const ta = document.createElement("textarea");
+        ta.value = texto;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      const original = btn.textContent;
+      btn.textContent = "✔ Copiado";
+      setTimeout(() => { btn.textContent = original; }, 1500);
+    });
+  });
 </script>
 {% endblock %}

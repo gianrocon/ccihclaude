@@ -59,6 +59,7 @@ mais). O decorator `carregador_required` checa `request.papel_atual`.
 | `importer_service.py` | Parseia Excel e persiste registros |
 | `patient_service.py` | Queries e lógica de paciente |
 | `chart_service.py` | Geração de gráficos matplotlib |
+| `cultura_resumo_service.py` | Texto copiável das culturas positivas (siglas de ATB, painéis por microrganismo, parser da obs) |
 
 ## Banco de dados
 

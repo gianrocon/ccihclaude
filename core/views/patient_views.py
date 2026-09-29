@@ -3,7 +3,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, render
 
 from core.models import Paciente
-from core.services import patient_service, chart_service
+from core.services import patient_service, chart_service, cultura_resumo_service
 
 
 @login_required
@@ -36,10 +36,19 @@ def paciente_detalhe(request, pk):
 
     culturas_com_atb = []
     for c in culturas:
+        antibiograma = list(patient_service.get_antibiograma(c))
         culturas_com_atb.append({
             "cultura": c,
-            "antibiograma": patient_service.get_antibiograma(c),
+            "antibiograma": antibiograma,
+            # Antibióticos citados só na obs (ex.: vancomicina, polimixina)
+            "antibiograma_obs": [
+                {"sigla": sigla, "sensibilidade": sens}
+                for sigla, _nome, sens, da_obs
+                in cultura_resumo_service.antibiograma_completo(c, antibiograma)
+                if da_obs
+            ],
         })
+    texto_culturas_copia = cultura_resumo_service.texto_culturas_positivas(culturas_com_atb)
 
     gantt_atb_b64   = chart_service.render_gantt_atb_base64(paciente)
     gantt_int_b64   = chart_service.render_gantt_internamentos_base64(paciente)
@@ -54,6 +63,7 @@ def paciente_detalhe(request, pk):
     return render(request, "core/paciente_detalhe.html", {
         "paciente":        paciente,
         "culturas_com_atb": culturas_com_atb,
+        "texto_culturas_copia": texto_culturas_copia,
         "periodos_atb":    periodos_atb,
         "internamentos":   internamentos,
         "resistentes":     resistentes_norm,
