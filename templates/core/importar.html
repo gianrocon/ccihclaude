@@ -14,7 +14,7 @@
             <label class="form-label fw-semibold">Arquivo Excel</label>
             <input type="file" name="arquivo" class="form-control" accept=".xlsx,.xls" required>
             <div class="form-text">
-              Formatos aceitos: <code>.xlsx</code> (Microbiologia, Passagens) e <code>.xls</code> (Controle ATB).<br>
+              Formatos aceitos: <code>.xlsx</code> (Microbiologia, Controle ATB, Passagens) e <code>.xls</code> (Controle ATB, formato antigo).<br>
               O tipo de arquivo é detectado automaticamente pelo conteúdo.
             </div>
           </div>
@@ -30,7 +30,7 @@
         <dl class="mb-0">
           <dt>Microbiologia (.xlsx)</dt>
           <dd>Culturas microbiológicas com antibiograma. Detectado pela palavra "microbiologia" no cabeçalho.</dd>
-          <dt>Controle ATB (.xls)</dt>
+          <dt>Controle ATB (.xlsx ou .xls)</dt>
           <dd>Controle de antibióticos por paciente. Detectado pela palavra "antimicrobiano" no cabeçalho.</dd>
           <dt>Passagens / Internamentos (.xlsx)</dt>
           <dd>Períodos de internação. Detectado pelas palavras "permanência" ou "internamento" no cabeçalho.</dd>
