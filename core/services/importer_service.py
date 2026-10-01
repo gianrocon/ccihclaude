@@ -69,8 +69,77 @@ def _detect_type(path: Path) -> str:
     return "desconhecido"
 
 
+import re
+
+_RE_CNES = re.compile(r"CNES:\s*0*(\d+)", re.I)
+_RE_ORIGEM = re.compile(r"Origem:\s*([^,;]+)", re.I)
+
+
+def _identificacao_planilha(path: Path):
+    """(cnes, origem) lidos do cabecalho da planilha, ou None se ausentes.
+    ATB traz 'CNES: 0003980 - NOME' na linha 2; microbiologia traz 'Origem: HPEL'
+    na linha de PARAMETROS."""
+    cnes = origem = None
+    textos = []
+    if path.suffix.lower() == ".xlsx":
+        wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+        for row in wb.active.iter_rows(max_row=5, values_only=True):
+            textos.extend(str(c) for c in row if c)
+        wb.close()
+    elif path.suffix.lower() == ".xls":
+        ws = xlrd.open_workbook(str(path), encoding_override="cp1252").sheet_by_index(0)
+        for i in range(min(5, ws.nrows)):
+            textos.extend(str(ws.cell_value(i, j)) for j in range(ws.ncols) if ws.cell_value(i, j))
+    for t in textos:
+        m = _RE_CNES.search(t)
+        if m and cnes is None:
+            cnes = m.group(1)
+        m = _RE_ORIGEM.search(t)
+        if m and origem is None:
+            origem = m.group(1).strip()
+    return cnes, origem
+
+
+def _checar_hospital(path: Path, hospital):
+    """Recusa a planilha que pertence a OUTRO hospital cadastrado: o n.o de
+    prontuario e por hospital, entao importar o arquivo no hospital errado funde
+    pacientes diferentes sem aviso. Nao bloqueia quando nao ha como saber (hospital
+    sem CNES cadastrado e arquivo sem identificacao de outro hospital cadastrado)."""
+    from core.models import Hospital
+
+    cnes, origem = _identificacao_planilha(path)
+    if cnes:
+        if hospital.cnes and hospital.cnes.lstrip("0") != cnes:
+            raise ValueError(
+                "Planilha do CNES %s, mas o hospital de destino (%s) tem CNES %s." % (cnes, hospital.sigla, hospital.cnes)
+            )
+        for h in Hospital.objects.exclude(pk=hospital.pk):
+            if h.cnes and h.cnes.lstrip("0") == cnes:
+                raise ValueError("Planilha do CNES %s pertence ao hospital %s, nao a %s." % (cnes, h.sigla, hospital.sigla))
+    if origem and origem.upper() != hospital.sigla.upper():
+        outro = Hospital.objects.filter(sigla__iexact=origem).exclude(pk=hospital.pk).first()
+        if outro:
+            raise ValueError("Planilha com Origem %s, mas o hospital de destino e %s." % (outro.sigla, hospital.sigla))
+
+
+def _atualizar_registro_atb(obj, dias_solic, dias_ccih, dias_em_uso, medico):
+    """Linha repetida (mesmo paciente+medicamento+inicio): vale o maior numero de
+    dias; o medico responsavel e o da linha com MAIS dias solicitados."""
+    changed = dias_em_uso > obj.dias_em_uso or dias_solic > obj.dias_solic or dias_ccih > obj.dias_ccih
+    if not changed:
+        return False
+    if dias_solic > obj.dias_solic and medico:
+        obj.medico = medico
+    obj.dias_solic = max(dias_solic, obj.dias_solic)
+    obj.dias_ccih = max(dias_ccih, obj.dias_ccih)
+    obj.dias_em_uso = max(dias_em_uso, obj.dias_em_uso)
+    obj.save()
+    return True
+
+
 def importar_microbiologia(path: Path, hospital, usuario=None) -> int:
     path = Path(path)
+    _checar_hospital(path, hospital)
     wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
     ws = wb.active
     rows = list(ws.iter_rows(values_only=True))
@@ -208,6 +277,7 @@ def _find_col(row_vals, *keywords):
 
 def importar_controle_atb(path: Path, hospital, usuario=None) -> int:
     path = Path(path)
+    _checar_hospital(path, hospital)
     ext = path.suffix.lower()
 
     if ext == ".xlsx":
@@ -285,18 +355,8 @@ def importar_controle_atb(path: Path, hospital, usuario=None) -> int:
                 )
                 if created:
                     inserted += 1
-                else:
-                    changed = (
-                        dias_em_uso > obj.dias_em_uso
-                        or dias_solic > obj.dias_solic
-                        or dias_ccih > obj.dias_ccih
-                    )
-                    if changed:
-                        obj.dias_solic  = max(dias_solic,  obj.dias_solic)
-                        obj.dias_ccih   = max(dias_ccih,   obj.dias_ccih)
-                        obj.dias_em_uso = max(dias_em_uso, obj.dias_em_uso)
-                        obj.save()
-                        inserted += 1
+                elif _atualizar_registro_atb(obj, dias_solic, dias_ccih, dias_em_uso, medico):
+                    inserted += 1
 
     Importacao.objects.create(
         hospital=hospital, usuario=usuario,
@@ -418,18 +478,8 @@ def _importar_controle_atb_xlsx(path: Path, hospital, usuario=None) -> int:
                 )
                 if created:
                     inserted += 1
-                else:
-                    changed = (
-                        dias_em_uso > obj.dias_em_uso
-                        or dias_solic > obj.dias_solic
-                        or dias_ccih > obj.dias_ccih
-                    )
-                    if changed:
-                        obj.dias_solic  = max(dias_solic,  obj.dias_solic)
-                        obj.dias_ccih   = max(dias_ccih,   obj.dias_ccih)
-                        obj.dias_em_uso = max(dias_em_uso, obj.dias_em_uso)
-                        obj.save()
-                        inserted += 1
+                elif _atualizar_registro_atb(obj, dias_solic, dias_ccih, dias_em_uso, medico):
+                    inserted += 1
 
     Importacao.objects.create(
         hospital=hospital, usuario=usuario,

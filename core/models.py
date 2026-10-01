@@ -9,6 +9,10 @@ class Hospital(models.Model):
     nome = models.CharField(max_length=200, verbose_name="Nome")
     sigla = models.CharField(max_length=10, unique=True, verbose_name="Sigla")
     ativo = models.BooleanField(default=True, verbose_name="Ativo")
+    cnes = models.CharField(
+        max_length=10, blank=True, default="", verbose_name="CNES",
+        help_text="Usado para recusar planilhas de outro hospital (o relatório de ATB traz o CNES no cabeçalho).",
+    )
     criado_em = models.DateTimeField(auto_now_add=True)
 
     class Meta:
