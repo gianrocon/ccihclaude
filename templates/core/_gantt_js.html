@@ -1,0 +1,62 @@
+<style>
+  .gantt { --g-bar:#1565c0; --g-res:#c62828; --g-grid:#d5dbe3; --g-txt:#2b3440; --g-mut:#6b7684; --g-bg:#fafbfc;
+           width:100%; overflow-x:auto; background:var(--g-bg); border:1px solid var(--g-grid); border-radius:8px; padding:8px 4px; }
+  [data-bs-theme="dark"] .gantt { --g-bar:#5b9dff; --g-res:#ff6b6b; --g-grid:#39414d; --g-txt:#e3e8ef; --g-mut:#9aa4b2; --g-bg:#161b22; }
+  .gantt svg { display:block; font:12px system-ui,-apple-system,"Segoe UI",sans-serif; }
+  .gantt .rot { fill:var(--g-txt); } .gantt .eixo { fill:var(--g-mut); font-size:11px; font-variant-numeric:tabular-nums; }
+  .gantt .grade { stroke:var(--g-grid); stroke-dasharray:3 3; } .gantt .hoje { stroke:var(--g-res); stroke-width:1.5; }
+  .gantt .barra { fill:var(--g-bar); } .gantt .barra.res { fill:var(--g-res); }
+  .gantt .dias { fill:#fff; font-size:11px; font-weight:700; pointer-events:none; }
+</style>
+<script>
+/* Gantt em SVG: cada <div class="gantt" data-gantt="<id do json_script>"> vira uma linha do tempo.
+   Dados: [{rotulo, nome, inicio:"AAAA-MM-DD", fim, dias, resistente}] (core/services/chart_service.py). */
+(function () {
+  const NS = "http://www.w3.org/2000/svg";
+  const DIA = 86400000;
+  const el = (tag, at, txt) => { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (txt != null) e.textContent = txt; return e; };
+  const d = (s) => new Date(s + "T00:00:00").getTime();  // sempre ms (Date + numero viraria texto)
+  const fmt = (t) => new Date(t).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" });
+
+  function desenha(box) {
+    const fonte = document.getElementById(box.dataset.gantt);
+    const dados = fonte ? JSON.parse(fonte.textContent) : [];
+    if (!dados.length) { box.remove(); return; }
+    const linhas = [...new Set(dados.map((p) => p.rotulo))];
+    const ini = Math.min(...dados.map((p) => d(p.inicio)));
+    const fim = Math.max(...dados.map((p) => d(p.fim))) + DIA;
+    const W = Math.max(box.clientWidth - 8, 320), ESQ = Math.min(190, Math.round(W * 0.3)), DIR = 16, TOPO = 8, H_LIN = 26, BASE = 34;
+    const H = TOPO + linhas.length * H_LIN + BASE;
+    const x = (t) => ESQ + ((t - ini) / (fim - ini)) * (W - ESQ - DIR);
+    const svg = el("svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Linha do tempo" });
+
+    // marcas do eixo: uma data a cada ~80px (no maximo 8), sem sobrepor
+    const n = Math.max(1, Math.min(8, Math.floor((W - ESQ - DIR) / 80), Math.round((fim - ini) / DIA)));
+    for (let i = 0; i <= n; i++) {
+      const t = ini + ((fim - ini) * i) / n;
+      svg.append(el("line", { class: "grade", x1: x(t), x2: x(t), y1: TOPO, y2: H - BASE + 4 }));
+      svg.append(el("text", { class: "eixo", x: x(t), y: H - BASE + 18, "text-anchor": i === 0 ? "start" : i === n ? "end" : "middle" }, fmt(new Date(t))));
+    }
+    const hoje = new Date().setHours(0, 0, 0, 0);
+    if (hoje >= ini && hoje <= fim) svg.append(el("line", { class: "hoje", x1: x(hoje), x2: x(hoje), y1: TOPO, y2: H - BASE + 4 }));
+
+    linhas.forEach((r, i) => svg.append(el("text", { class: "rot", x: ESQ - 8, y: TOPO + i * H_LIN + H_LIN / 2 + 4, "text-anchor": "end" }, r)));
+    for (const p of dados) {
+      const y = TOPO + linhas.indexOf(p.rotulo) * H_LIN + 4;
+      const x0 = x(d(p.inicio)), x1 = Math.max(x(d(p.fim) + DIA), x0 + 3);
+      const g = el("g", {});
+      g.append(el("title", {}, `${p.nome}\n${fmt(d(p.inicio))} a ${fmt(d(p.fim))} · ${p.dias} dia(s)${p.resistente ? "\nResistente na última cultura" : ""}`));
+      g.append(el("rect", { class: "barra" + (p.resistente ? " res" : ""), x: x0, y, width: x1 - x0, height: H_LIN - 8, rx: 3 }));
+      if (x1 - x0 > 26) g.append(el("text", { class: "dias", x: (x0 + x1) / 2, y: y + (H_LIN - 8) / 2 + 4, "text-anchor": "middle" }, `${p.dias}d`));
+      svg.append(g);
+    }
+    box.replaceChildren(svg);
+  }
+
+  function tudo() { document.querySelectorAll(".gantt[data-gantt]").forEach(desenha); }
+  document.addEventListener("DOMContentLoaded", tudo);
+  // abas do Bootstrap: o painel escondido tem largura 0; redesenha ao mostrar e ao redimensionar
+  document.addEventListener("shown.bs.tab", tudo);
+  let t; window.addEventListener("resize", () => { clearTimeout(t); t = setTimeout(tudo, 150); });
+})();
+</script>

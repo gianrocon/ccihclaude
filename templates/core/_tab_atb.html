@@ -27,10 +27,9 @@
   </table>
 </div>
 
-{% if gantt_atb_b64 %}
-<div class="mt-3">
-  <img src="data:image/png;base64,{{ gantt_atb_b64 }}" class="img-fluid w-100" alt="Linha do tempo ATB">
-</div>
+{% if gantt_atb %}
+<div class="gantt mt-3" data-gantt="gantt-atb-dados"></div>
+{{ gantt_atb|json_script:"gantt-atb-dados" }}
 {% endif %}
 
 {% else %}

@@ -55,6 +55,7 @@
 {% endblock %}
 
 {% block extra_js %}
+{% include "core/_gantt_js.html" %}
 <script>
   // Preserve active tab across page reloads
   const tabKey = "ccih-tab-{{ paciente.pk }}";

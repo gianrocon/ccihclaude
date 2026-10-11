@@ -50,8 +50,8 @@ def paciente_detalhe(request, pk):
         })
     texto_culturas_copia = cultura_resumo_service.texto_culturas_positivas(culturas_com_atb)
 
-    gantt_atb_b64   = chart_service.render_gantt_atb_base64(paciente)
-    gantt_int_b64   = chart_service.render_gantt_internamentos_base64(paciente)
+    gantt_atb = chart_service.dados_gantt_atb(paciente, periodos_atb, resistentes)
+    gantt_int = chart_service.dados_gantt_internamentos(paciente, internamentos)
 
     resistentes_norm = {r.upper() for r in resistentes}
 
@@ -67,7 +67,7 @@ def paciente_detalhe(request, pk):
         "periodos_atb":    periodos_atb,
         "internamentos":   internamentos,
         "resistentes":     resistentes_norm,
-        "gantt_atb_b64":   gantt_atb_b64,
-        "gantt_int_b64":   gantt_int_b64,
+        "gantt_atb":       gantt_atb,
+        "gantt_int":       gantt_int,
         "imagens_exame":   imagens_exame,
     })
