@@ -1,4 +1,4 @@
-"""API JSON somente-leitura, autenticada por token.
+"""API JSON autenticada por token (leitura + um endpoint de importação).
 
 Existe para o agente ``consultor-infecto`` obter culturas, antibiograma e
 antibióticos em uso sem raspar a interface HTML. Sem DRF de propósito: são
@@ -18,12 +18,16 @@ Notas de projeto:
 from __future__ import annotations
 
 import secrets
+import tempfile
+from pathlib import Path
 
 from decouple import config
 from django.http import JsonResponse
-from django.views.decorators.http import require_GET
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_GET, require_POST
 
 from core.models import Hospital
+from core.services import importer_service
 from core.services import patient_service as svc
 
 MAX_BUSCA = 50
@@ -211,6 +215,94 @@ def paciente(request):
             "tratamento de hoje.",
         ],
     })
+
+
+@api_view
+def cobertura(request):
+    """GET /api/v1/cobertura/?hospital=
+
+    Mesmo dado do ``relatorio_consultor`` sem prontuários: intervalos de
+    cobertura clínica (micro por ``dt_coleta``, ATB por ``dt_inicio``; gap > 14
+    dias separa intervalos) e a data do último upload de cada tipo. Um cliente
+    usa o fim do último intervalo para decidir o período do próximo relatec.
+    """
+    hospital, erro = _resolver_hospital(request)
+    if erro:
+        return erro
+
+    def intervalos(lista):
+        return [{"inicio": ini, "fim": fim} for ini, fim in lista]
+
+    return JsonResponse({
+        "hospital": hospital.sigla,
+        "microbiologia": {
+            "cobertura": intervalos(svc.get_cobertura_culturas(hospital)),
+            "ultimo_upload": svc.get_ultima_importacao(hospital, "microbiologia"),
+        },
+        "antimicrobianos": {
+            "cobertura": intervalos(svc.get_cobertura_atb(hospital)),
+            "ultimo_upload": svc.get_ultima_importacao(hospital, "controle_atb"),
+        },
+    })
+
+
+# --------------------------------------------------------------------------- #
+# Escrita: importação de planilha (único endpoint que grava)
+# --------------------------------------------------------------------------- #
+
+MAX_UPLOAD_BYTES = 20 * 1024 * 1024
+TIPOS_IMPORTACAO = {"microbiologia": (".xlsx",), "controle_atb": (".xls", ".xlsx")}
+
+
+@csrf_exempt
+@require_POST
+def importar(request):
+    """POST /api/v1/importar/?hospital=SIGLA&tipo=microbiologia|controle_atb
+
+    Corpo multipart com o campo ``arquivo`` (o .xlsx/.xls do Relatec). Mesmo
+    caminho dos comandos ``importar_microbiologia_ssh`` / ``importar_atb_ssh``
+    (``importer_service.importar_com_validacao``): recusa tipo errado e planilha
+    de outro hospital (CNES/Origem). Existe para o cliente automatizado
+    (playwright-cli-smpep) atualizar o ccih sem SSH. CSRF não se aplica: a
+    autenticação é o token Bearer, não cookie de sessão.
+
+    Respostas: 200 ``{tipo, hospital, registros}``; 400 parâmetro/arquivo
+    inválido ou recusado pela validação; 401/503 como os GET.
+    """
+    if not config("API_TOKEN", default=""):
+        return _erro("API_TOKEN nao configurado no servidor", 503)
+    if not _token_valido(request):
+        return _erro("token ausente ou invalido", 401)
+
+    hospital, erro = _resolver_hospital(request)
+    if erro:
+        return erro
+
+    tipo = (request.GET.get("tipo") or "").strip()
+    if tipo not in TIPOS_IMPORTACAO:
+        return _erro("parametro 'tipo' deve ser microbiologia ou controle_atb", 400)
+
+    arquivo = request.FILES.get("arquivo")
+    if arquivo is None:
+        return _erro("campo multipart 'arquivo' e obrigatorio", 400)
+    sufixo = Path(arquivo.name).suffix.lower()
+    if sufixo not in TIPOS_IMPORTACAO[tipo]:
+        return _erro("extensao %s invalida para %s" % (sufixo, tipo), 400)
+    if arquivo.size > MAX_UPLOAD_BYTES:
+        return _erro("arquivo maior que %d MB" % (MAX_UPLOAD_BYTES // 2**20), 400)
+
+    # nome original preservado (vai para Importacao.arquivo); pasta temporaria propria
+    with tempfile.TemporaryDirectory(prefix="ccih_api_") as tmp:
+        destino = Path(tmp) / Path(arquivo.name).name
+        with open(destino, "wb") as fh:
+            for parte in arquivo.chunks():
+                fh.write(parte)
+        try:
+            n = importer_service.importar_com_validacao(destino, hospital, None, tipo)
+        except ValueError as exc:
+            return _erro(str(exc), 400)
+
+    return JsonResponse({"tipo": tipo, "hospital": hospital.sigla, "registros": n})
 
 
 @api_view

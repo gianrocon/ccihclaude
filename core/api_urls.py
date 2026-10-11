@@ -6,12 +6,14 @@ não usam sessão, não usam ``login_required`` e não usam o hospital da sessã
 
 from django.urls import path
 
-from core.views.api_views import formulario, hospitais, paciente, pacientes
+from core.views.api_views import cobertura, formulario, hospitais, importar, paciente, pacientes
 
 app_name = "api"
 
 urlpatterns = [
     path("hospitais/", hospitais, name="hospitais"),
+    path("cobertura/", cobertura, name="cobertura"),
+    path("importar/", importar, name="importar"),
     path("pacientes/", pacientes, name="pacientes"),
     path("paciente/", paciente, name="paciente"),
     path("formulario/", formulario, name="formulario"),
