@@ -76,31 +76,43 @@ def get_periodos_atb(paciente):
     resultado = []
     for med, records in by_med.items():
         records.sort(key=lambda r: r[0])
-        periods = []
-        for inicio, dias in records:
-            if not periods:
-                periods.append([inicio, inicio + timedelta(days=dias)])
-            else:
-                period_start, period_fim = periods[-1]
-                gap = (inicio - period_fim).days
-                if gap == 0:
-                    periods[-1][1] = max(period_fim, period_start + timedelta(days=dias))
-                elif gap <= 1:
-                    periods[-1][1] = max(period_fim, inicio + timedelta(days=dias))
-                else:
-                    periods.append([inicio, inicio + timedelta(days=dias)])
-
-        for period_start, period_fim in periods:
-            total = (period_fim - period_start).days
-            resultado.append({
-                "medicamento": med,
-                "inicio": period_start,
-                "fim": period_fim,
-                "total_dias": total,
-            })
+        for p in periodos_de_fichas(records):
+            resultado.append({"medicamento": med, **p})
 
     resultado.sort(key=lambda x: x["inicio"])
     return resultado
+
+
+def periodos_de_fichas(records):
+    """Periodos de uso de UMA droga a partir das fichas do relatec atb [(dt_inicio, dias_em_uso)], ordenadas.
+
+    Cada linha do relatec e uma FICHA (solicitacao/prorrogacao), e ``dias_em_uso`` e o D# da prescricao quando
+    a ficha foi encerrada/substituida (ou no dia do relatorio, se ainda ativa) — contado desde o inicio do CURSO,
+    nao da ficha. Uma ficha pode atravessar suspensao + reinicio: o D# zera e ``dias_em_uso`` fica menor que a
+    distancia do inicio do curso ate a propria ficha. Nesse caso o curso anterior fecha na data da ficha
+    (``fim_incerto``: a suspensao foi entre essa data e o reinicio; a data exata so existe na prescricao) e o novo
+    curso comeca em (inicio da proxima ficha - dias_em_uso). Ex.: fichas 17/09 (D35), 24/09 (D6), 09/10 (D9) =
+    curso ate ~24/09..03/10 e novo curso desde 03/10.
+    """
+    periods = []  # [inicio, fim, fim_incerto]
+    for i, (inicio, dias) in enumerate(records):
+        prox = records[i + 1][0] if i + 1 < len(records) else None
+        if periods and (inicio - periods[-1][1]).days <= 1:
+            cur = periods[-1]
+            if cur[0] + timedelta(days=dias) >= inicio:  # D# continua contando desde o inicio do curso
+                cur[1] = max(cur[1], cur[0] + timedelta(days=dias))
+                continue
+            # D# zerou nesta ficha. Reinicio datado pela ficha seguinte; se cair logo no inicio da ficha (troca de
+            # dose/item novo) ou nao houver ficha seguinte, e uso continuo
+            novo = max(inicio, prox - timedelta(days=dias)) if prox else inicio
+            if (novo - inicio).days <= 1:
+                cur[1] = max(cur[1], novo + timedelta(days=dias))
+                continue
+            cur[1], cur[2] = max(cur[1], inicio), True  # suspensao entre a data da ficha e o reinicio
+            periods.append([novo, novo + timedelta(days=dias), False])
+        else:
+            periods.append([inicio, inicio + timedelta(days=dias), False])
+    return [{"inicio": a, "fim": b, "total_dias": (b - a).days, "fim_incerto": inc} for a, b, inc in periods]
 
 
 def get_formulario(hospital):

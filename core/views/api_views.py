@@ -213,6 +213,8 @@ def paciente(request):
             "corrente use atb_raw ou o Sumario do prontuario.",
             "dias_em_uso_na_importacao e foto da data de importacao, nao o dia de "
             "tratamento de hoje.",
+            "fim_incerto=true: suspenso e reiniciado dentro da mesma ficha; a suspensao foi "
+            "entre o fim do periodo e o inicio do seguinte (data exata so na prescricao).",
         ],
     })
 

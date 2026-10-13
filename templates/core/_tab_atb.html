@@ -19,7 +19,7 @@
       <tr {% if p.is_resistant %}class="atb-resistant"{% endif %}>
         <td>{% if p.is_resistant %}⚠ {% endif %}{{ p.medicamento }}</td>
         <td>{{ p.inicio|date:"d/m/Y" }}</td>
-        <td>{{ p.fim|date:"d/m/Y" }}</td>
+        <td>{{ p.fim|date:"d/m/Y" }}{% if p.fim_incerto %} <span class="text-warning" title="Suspenso e reiniciado dentro da mesma ficha: a suspensão foi entre esta data e o reinício (data exata só na prescrição)">≥</span>{% endif %}</td>
         <td>{{ p.total_dias }}</td>
       </tr>
       {% endfor %}
